@@ -3,6 +3,9 @@ package com.jinkops.repository;
 import com.jinkops.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-// 数据访问层接口
+// 继承 JpaRepository<User, Long> 自动生成增删改查
 public interface UserRepository extends JpaRepository<User, Long> {
+
+    // 按用户名查
+    User findByUsername(String username);
 }

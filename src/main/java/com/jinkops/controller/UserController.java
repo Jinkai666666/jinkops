@@ -1,23 +1,31 @@
 package com.jinkops.controller;
 
 import com.jinkops.entity.User;
-import com.jinkops.exception.BizException;
-import com.jinkops.exception.ErrorCode;
 import com.jinkops.service.UserService;
-import com.jinkops.vo.ApiResponse;
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/api/users")
-@RequiredArgsConstructor
+@RequestMapping("/api/users") // 基础路径
 public class UserController {
+
     private final UserService userService;
 
-    @GetMapping("/{id}")
-    public ApiResponse<User> getUserById(@PathVariable Long id) {
-        return userService.findById(id)
-                .map(ApiResponse::success)
-                .orElseThrow(() -> new BizException(ErrorCode.USER_NOT_FOUND));
+
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+
+    // 查全部用户
+    @GetMapping
+    public List<User> getAllUsers() {
+        return userService.getAllUsers();
+    }
+
+    // 按用户名查
+    @GetMapping("/{username}")
+    public User getUserByUsername(@PathVariable String username) {
+        return userService.getByUsername(username);
     }
 }
