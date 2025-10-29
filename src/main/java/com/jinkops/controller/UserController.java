@@ -5,7 +5,7 @@ import com.jinkops.service.UserService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
+//  http://localhost:8080/api/users
 @RestController
 @RequestMapping("/api/users") // 基础路径
 public class UserController {
@@ -28,4 +28,17 @@ public class UserController {
     public User getUserByUsername(@PathVariable String username) {
         return userService.getByUsername(username);
     }
+    // 新增用户
+    @PostMapping
+    public User addUser(@RequestBody User user) {
+        return userService.addUser(user);
+    }
+
+    //删除用户
+    @DeleteMapping("/{username}")
+    public String deleteUser(@PathVariable String username) {
+        userService.deleteUser(username);
+        return "User deleted: " + username;
+    }
+
 }

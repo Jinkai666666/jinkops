@@ -5,6 +5,7 @@ import com.jinkops.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService {
@@ -24,5 +25,19 @@ public class UserService {
     // 用户名查
     public User getByUsername(String username) {
         return userRepository.findByUsername(username);
+    }
+
+    //  新增用户 (Create new user)
+    public User addUser(User user) {
+        return userRepository.save(user);
+    }
+    //  删除用户 (Delete by username)
+    public void deleteUser(String username) {
+        userRepository.deleteUserByUsername(username);
+    }
+
+    //根据用户名找查
+    public Optional<User>getById(Long id) {
+        return  userRepository.findById(id);
     }
 }
