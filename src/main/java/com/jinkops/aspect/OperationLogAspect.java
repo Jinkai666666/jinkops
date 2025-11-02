@@ -7,6 +7,8 @@ import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import com.jinkops.entity.OperationLogEntity;
+import com.jinkops.repository.OperationLogRepository;
 
 import java.util.Arrays;
 
@@ -21,6 +23,13 @@ public class OperationLogAspect {
 
     // 定义日志记录器
     private static final Logger log = LoggerFactory.getLogger(OperationLogAspect.class);
+
+    //入库配置
+    private final OperationLogRepository operationLogRepository;
+
+    public OperationLogAspect(OperationLogRepository operationLogRepository) {
+        this.operationLogRepository = operationLogRepository;
+    }
 
     /**
      * 环绕通知（Around Advice）
@@ -40,6 +49,8 @@ public class OperationLogAspect {
         String args = Arrays.toString(joinPoint.getArgs());            // 参数数组转字符串 (args)
         String desc = operationLog.value();                            // 从注解里取描述 (annotation description)
 
+        String traceId = java.util.UUID.randomUUID().toString().replace("-", "");
+
         try {
             // 执行目标方法 (execute the original method)
             Object result = joinPoint.proceed();
@@ -49,8 +60,18 @@ public class OperationLogAspect {
 
             //  打印正常日志（INFO）
             // traceId 已自动从 MDC 输出
-            log.info("操作日志 => [{}#{}] 描述: {} 参数: {} 耗时: {}ms",
-                    className, methodName, desc, args, time);
+            log.info("操作日志 => [{}#{}] 描述: {} 参数: {} 耗时: {}ms [traceId={}]",
+                    className, methodName, desc, args, time,traceId);
+
+            //日志入库
+            OperationLogEntity entity = new OperationLogEntity();
+            entity.setTraceId(traceId);
+            entity.setClassName(className);
+            entity.setMethodName(methodName);
+            entity.setArgs(args);
+            entity.setDescription(desc);
+            entity.setElapsedTime(time);
+            operationLogRepository.save(entity);
 
             // 返回原方法的执行结果
             return result;
@@ -59,8 +80,19 @@ public class OperationLogAspect {
             // 捕获异常时打印错误日志
             long time = System.currentTimeMillis() - start;
 
-            log.error("操作异常 => [{}#{}] 描述: {} 参数: {} 耗时: {}ms 错误: {}",
-                    className, methodName, desc, args, time, e.getMessage());
+            log.error("操作异常 => [{}#{}] 描述: {} 参数: {} 耗时: {}ms 错误: {} [traceId={}]",
+                    className, methodName, desc, args, time, e, traceId);
+
+
+            // 异常日志入库
+            OperationLogEntity entity = new OperationLogEntity();
+            entity.setTraceId(traceId);
+            entity.setClassName(className);
+            entity.setMethodName(methodName);
+            entity.setArgs(args);
+            entity.setDescription(desc + " (异常)");
+            entity.setElapsedTime(time);
+            operationLogRepository.save(entity);
 
             // 把异常继续往外抛
             throw e;
