@@ -16,12 +16,18 @@ public class OperationLogService {
        this.operationLogRepository = operationLogRepository;
    }
 
-    /**
-     * 分页查询日志
-     * @param pageable 分页参数
-     * @return 分页结果
-     */
+    // 分页获取全部日志
     public Page<OperationLogEntity> getLogs(Pageable pageable){
         return operationLogRepository.findAll(pageable);
+    }
+
+    // 模糊搜索日志（可按用户名或操作名称模糊匹配）
+    public Page<OperationLogEntity> searchLogs(String keyword, Pageable pageable) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            // 没有关键字时返回全部
+            return getLogs(pageable);
+        }
+        // 有关键字时执行模糊搜索
+        return operationLogRepository.searchLogs(keyword, pageable);
     }
 }

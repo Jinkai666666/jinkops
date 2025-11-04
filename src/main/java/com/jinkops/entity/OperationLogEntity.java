@@ -21,6 +21,14 @@ public class OperationLogEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // 操作人用户名
+    @Column(length = 64)
+    private String username;
+
+    // 操作名称或类型（“新增用户”、“删除日志”等）
+    @Column(length = 128)
+    private String operation;
+
     // traceId 用于日志全链路追踪
     @Column(nullable = false, length = 64)
     private String traceId;
