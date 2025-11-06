@@ -15,6 +15,7 @@ public interface OperationLogRepository extends JpaRepository<OperationLogEntity
     // 模糊查询操作日志（根据用户名或操作描述）
     @Query("SELECT l FROM OperationLogEntity l " +
             "WHERE LOWER(l.username) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-            "OR LOWER(l.operation) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+            "OR LOWER(l.operation) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "ORDER BY l.timestamp DESC")
     Page<OperationLogEntity> searchLogs(@Param("keyword") String keyword, Pageable pageable);
 }
