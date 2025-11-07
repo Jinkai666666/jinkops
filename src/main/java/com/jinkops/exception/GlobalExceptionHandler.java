@@ -15,7 +15,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BizException.class)
     public ApiResponse<?> handleBizException(BizException e) {
-        return ApiResponse.fail(e.getErrorCode().getCode(), e.getMessage());
+        return ApiResponse.fail(e.getErrorCode());
     }
 
 
@@ -23,6 +23,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ApiResponse<?> handleException(Exception e) {
-        return ApiResponse.fail(500, "系统异常：" + e.getMessage());
+        // 保留系统异常原始信息给日志，返回前端固定提示
+        e.printStackTrace();
+        return ApiResponse.fail(ErrorCode.INTERNAL_ERROR);
     }
 }
