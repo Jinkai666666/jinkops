@@ -3,12 +3,15 @@ package com.jinkops.service;
 import com.jinkops.entity.User;
 import com.jinkops.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
-public class UserService {
+public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
 
@@ -39,5 +42,20 @@ public class UserService {
     //根据用户名找查
     public Optional<User>getById(Long id) {
         return  userRepository.findById(id);
+    }
+
+    //Security 登录用
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        User dbUser = userRepository.findByUsername(username);
+        if (dbUser == null) {
+            throw new UsernameNotFoundException("用户不存在: " + username);
+        }
+
+        return org.springframework.security.core.userdetails.User
+                .withUsername(dbUser.getUsername())
+                .password(dbUser.getPassword())
+                .authorities("USER") // 临时权限
+                .build(); //  一个 UserDetails 对象
     }
 }
