@@ -1,27 +1,51 @@
 package com.jinkops.controller;
 
+import com.jinkops.entity.User;
+import com.jinkops.service.UserService;
 import com.jinkops.util.JwtUtil;
 import com.jinkops.vo.ApiResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 
-//登录接口测试
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    // 模拟登录：admin/123456 返回 Token
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private UserService userService;
+
+    //  登录接口
     @PostMapping("/login")
-    public ApiResponse<String> login(@RequestParam String username,
-                                     @RequestParam String password) {
-        if ("admin".equals(username) && "123456".equals(password)) {
-            String token = JwtUtil.generateToken(username);
-            return ApiResponse.success("登录成功", token);
+    public Map<String, Object> login(@RequestBody User user) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword())
+            );
+
+            // 登录成功 生成 JWT
+            String token = JwtUtil.generateToken(user.getUsername());
+            result.put("code", 200);
+            result.put("msg", "登录成功");
+            result.put("token", token);
+        } catch (AuthenticationException e) {
+            result.put("code", 401);
+            result.put("msg", "用户名或密码错误");
         }
-        return ApiResponse.fail(401, "用户名或密码错误");
+        return result;
     }
 
-    // 校验 Token
+    //  校验 Token
     @GetMapping("/verify")
     public ApiResponse<String> verify(@RequestParam String token) {
         try {
