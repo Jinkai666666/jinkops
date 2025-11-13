@@ -15,6 +15,12 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class JwtAuthInterceptor implements HandlerInterceptor {
 
+    private final JwtUtil jwtUtil;
+
+    public JwtAuthInterceptor(JwtUtil jwtUtil) {
+        this.jwtUtil = jwtUtil;
+    }
+
     @Override
     public boolean preHandle(HttpServletRequest request,
                              HttpServletResponse response,
@@ -31,7 +37,7 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
 
         String token = authHeader.substring(7); // 去掉 "Bearer "
         try {
-            Claims claims = JwtUtil.parseToken(token);
+            Claims claims = jwtUtil.parseToken(token);
             String username = claims.getSubject();
 
             // 用户名写入 MDC，后续日志可用 traceId + username
