@@ -4,6 +4,7 @@ import com.jinkops.entity.User;
 import com.jinkops.service.UserService;
 import com.jinkops.util.JwtUtil;
 import com.jinkops.vo.ApiResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -16,25 +17,28 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
 
-    @Autowired
-    private UserService userService;
+    private final AuthenticationManager authenticationManager;
 
+    private final UserService userService;
+
+    private final JwtUtil jwtUtil;
     //  登录接口
     @PostMapping("/login")
     public Map<String, Object> login(@RequestBody User user) {
         Map<String, Object> result = new HashMap<>();
         try {
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword())
+                    new UsernamePasswordAuthenticationToken(
+                            user.getUsername(),
+                            user.getPassword())
             );
 
             // 登录成功 生成 JWT
-            String token = JwtUtil.generateToken(user.getUsername());
+            String token = jwtUtil.generateToken(user.getUsername());
             result.put("code", 200);
             result.put("msg", "登录成功");
             result.put("token", token);
@@ -49,10 +53,14 @@ public class AuthController {
     @GetMapping("/verify")
     public ApiResponse<String> verify(@RequestParam String token) {
         try {
-            String username = JwtUtil.parseToken(token).getSubject();
+            String username = jwtUtil.parseToken(token).getSubject();
             return ApiResponse.success("Token有效：" + username, null);
         } catch (Exception e) {
             return ApiResponse.fail(401, "Token无效或已过期");
         }
     }
+
+
+
+
 }

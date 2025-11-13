@@ -1,6 +1,7 @@
 package com.jinkops.config;
 
 import com.jinkops.interceptor.JwtAuthInterceptor;
+import com.jinkops.interceptor.TraceInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;

@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class UserService implements UserDetailsService {
+public class UserService {
 
     private final UserRepository userRepository;
 
@@ -44,18 +44,5 @@ public class UserService implements UserDetailsService {
         return  userRepository.findById(id);
     }
 
-    //Security 登录用
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User dbUser = userRepository.findByUsername(username);
-        if (dbUser == null) {
-            throw new UsernameNotFoundException("用户不存在: " + username);
-        }
 
-        return org.springframework.security.core.userdetails.User
-                .withUsername(dbUser.getUsername())
-                .password(dbUser.getPassword())
-                .authorities("USER") // 临时权限
-                .build(); //  一个 UserDetails 对象
-    }
 }
