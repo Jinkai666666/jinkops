@@ -1,5 +1,5 @@
 package com.jinkops.service;
-import com.jinkops.entity.OperationLogEntity;
+import com.jinkops.entity.log.OperationLogEntity;
 import com.jinkops.repository.OperationLogRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

@@ -1,4 +1,4 @@
-package com.jinkops.entity;
+package com.jinkops.entity.log;
 
 import jakarta.persistence.*;
 import lombok.Data;

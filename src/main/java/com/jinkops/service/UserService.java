@@ -1,11 +1,8 @@
 package com.jinkops.service;
 
-import com.jinkops.entity.User;
+import com.jinkops.entity.user.User;
 import com.jinkops.repository.UserRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.util.List;
 import java.util.Optional;

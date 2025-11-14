@@ -1,6 +1,6 @@
 package com.jinkops.repository;
 
-import com.jinkops.entity.User;
+import com.jinkops.entity.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 // 继承 JpaRepository<User, Long> 自动生成增删改查

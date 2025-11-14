@@ -1,11 +1,10 @@
 package com.jinkops.controller;
 
-import com.jinkops.entity.User;
+import com.jinkops.entity.user.User;
 import com.jinkops.service.UserService;
 import com.jinkops.util.JwtUtil;
 import com.jinkops.vo.ApiResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;

@@ -1,8 +1,8 @@
 package com.jinkops.service;
 
-import com.jinkops.entity.Permission;
-import com.jinkops.entity.Role;
-import com.jinkops.entity.User;
+import com.jinkops.entity.user.Permission;
+import com.jinkops.entity.user.Role;
+import com.jinkops.entity.user.User;
 import com.jinkops.repository.UserRepository;
 
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

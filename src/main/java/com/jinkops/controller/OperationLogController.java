@@ -1,6 +1,6 @@
 package com.jinkops.controller;
 
-import com.jinkops.entity.OperationLogEntity;
+import com.jinkops.entity.log.OperationLogEntity;
 import com.jinkops.service.OperationLogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
