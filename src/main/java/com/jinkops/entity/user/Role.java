@@ -1,4 +1,4 @@
-package com.jinkops.entity;
+package com.jinkops.entity.user;
 
 import jakarta.persistence.*;
 import java.util.HashSet;

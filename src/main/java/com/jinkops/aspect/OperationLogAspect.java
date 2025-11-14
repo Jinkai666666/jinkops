@@ -7,7 +7,7 @@ import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import com.jinkops.entity.OperationLogEntity;
+import com.jinkops.entity.log.OperationLogEntity;
 import com.jinkops.repository.OperationLogRepository;
 
 import java.util.Arrays;

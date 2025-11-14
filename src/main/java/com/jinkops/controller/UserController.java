@@ -1,7 +1,7 @@
 package com.jinkops.controller;
 
 import com.jinkops.annotation.OperationLog;
-import com.jinkops.entity.User;
+import com.jinkops.entity.user.User;
 import com.jinkops.service.UserService;
 import org.springframework.web.bind.annotation.*;
 
