@@ -1,5 +1,7 @@
 package com.jinkops.annotation;
 
+import com.jinkops.enums.PermissionMode;
+
 import java.lang.annotation.*;
 
 @Target(ElementType.METHOD) // 只能标在方法上，接口用的
@@ -7,6 +9,8 @@ import java.lang.annotation.*;
 @Documented
 public @interface RequirePermission {
 
-    // 权限码，例如 "sys:user:list"
-    String value();
+
+    String[] value(); // 支持多个权限
+
+    PermissionMode mode() default PermissionMode.AND; // 默认 AND}
 }
