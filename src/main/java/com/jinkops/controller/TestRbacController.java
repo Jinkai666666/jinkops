@@ -1,30 +1,40 @@
 package com.jinkops.controller;
 
 import com.jinkops.annotation.RequirePermission;
-import org.springframework.security.access.prepost.PreAuthorize;
+import com.jinkops.enums.PermissionMode;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class TestRbacController {
 
-    // 所有人都可以访问
+    // 无需权限
     @GetMapping("/api/test/open")
     public String open() {
-        return "接口正常";
+        return "公开接口：无需任何权限";
     }
 
-    // 需要 sys:user:list 权限
+    // 普通权限：sys:user:list
     @RequirePermission("sys:user:list")
-    @GetMapping("/api/test/list")
+    @GetMapping("/api/test/user/list")
     public String userList() {
-        return " sys:user:list 权限（普通用户 + 管理员都能访问）";
+        return "正常访问：你拥有 sys:user:list 权限";
     }
 
-    // 需要 sys:user:update 权限
+    // 管理员权限：sys:user:update
     @RequirePermission("sys:user:update")
-    @GetMapping("/api/test/update")
+    @GetMapping("/api/test/user/update")
     public String userUpdate() {
-        return "sys:user:update 权限（只有管理员能访问）";
+        return "正常访问：你拥有 sys:user:update 权限（管理员权限）";
+    }
+
+    // 多权限 AND：sys:config:read + sys:config:reset 都要有
+    @RequirePermission(
+            value = {"sys:config:read", "sys:config:reset"},
+            mode = PermissionMode.AND
+    )
+    @GetMapping("/api/test/config/reset")
+    public String configReset() {
+        return "正常访问：sys:config:read + sys:config:reset 两个权限（AND）";
     }
 }
