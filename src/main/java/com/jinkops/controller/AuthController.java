@@ -1,5 +1,6 @@
 package com.jinkops.controller;
 
+import com.jinkops.annotation.OperationLog;
 import com.jinkops.entity.user.User;
 import com.jinkops.service.UserService;
 import com.jinkops.util.JwtUtil;
@@ -26,6 +27,7 @@ public class AuthController {
 
     private final JwtUtil jwtUtil;
     //  登录接口
+    @OperationLog("用户登录")
     @PostMapping("/login")
     public Map<String, Object> login(@RequestBody User user) {
         Map<String, Object> result = new HashMap<>();
