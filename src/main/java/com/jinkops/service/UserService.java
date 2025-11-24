@@ -1,6 +1,8 @@
 package com.jinkops.service;
 
 import com.jinkops.entity.user.User;
+import com.jinkops.exception.BizException;
+import com.jinkops.exception.ErrorCode;
 import com.jinkops.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
@@ -33,7 +35,13 @@ public class UserService {
     }
     //  删除用户 (Delete by username)
     public void deleteUser(String username) {
-        userRepository.deleteUserByUsername(username);
+        User user = userRepository.findByUsername(username);
+
+        if (user == null) {
+            throw new BizException(ErrorCode.USER_NOT_FOUND, "用户不存在：" + username);
+        }
+
+        userRepository.delete(user);
     }
 
     //根据用户名找查
