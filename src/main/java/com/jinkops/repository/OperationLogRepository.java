@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+
 // 日志入库操作接口
 @Repository
 public interface OperationLogRepository extends JpaRepository<OperationLogEntity, Long> {
@@ -18,4 +20,19 @@ public interface OperationLogRepository extends JpaRepository<OperationLogEntity
             "OR LOWER(l.operation) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "ORDER BY l.timestamp DESC")
     Page<OperationLogEntity> searchLogs(@Param("keyword") String keyword, Pageable pageable);
+
+
+    @Query("""
+    SELECT l FROM OperationLogEntity l
+    WHERE l.timestamp BETWEEN :start AND :end
+    ORDER BY l.timestamp DESC
+    """)
+    Page<OperationLogEntity> findByTimestampRange(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
+            Pageable pageable
+    );
+
+
+
 }

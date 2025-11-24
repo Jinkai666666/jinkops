@@ -39,7 +39,13 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable()) // 关闭 CSRF
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll() // 放行登录注册
+                        .requestMatchers("/api/auth/**",
+                                "/doc.html",
+                                "/swagger-ui/**",
+                                "/swagger-resources/**",
+                                "/v3/api-docs/**",
+                                "/api-docs/**",
+                                "/webjars/**").permitAll() // 放行登录注册
                         .anyRequest().authenticated()            // 其余都需要登录
                 )
                 .formLogin(form -> form.disable())  // 禁用默认登录页
