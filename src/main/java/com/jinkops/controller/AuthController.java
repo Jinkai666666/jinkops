@@ -5,6 +5,7 @@ import com.jinkops.entity.user.User;
 import com.jinkops.service.UserService;
 import com.jinkops.util.JwtUtil;
 import com.jinkops.vo.ApiResponse;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -14,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -24,6 +27,8 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
 
     private final UserService userService;
+
+    private final com.jinkops.cache.PermissionCache permissionCache;
 
     private final JwtUtil jwtUtil;
     //  登录接口
@@ -37,6 +42,23 @@ public class AuthController {
                             user.getUsername(),
                             user.getPassword())
             );
+
+
+
+
+            // 查询该用户的权限集合
+            org.springframework.security.core.userdetails.User userDetails =
+                    (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
+
+            var authorities = userDetails.getAuthorities();
+
+            Set<String> perms = authorities.stream()
+                    .map(a -> a.getAuthority())
+                    .collect(Collectors.toSet());
+
+
+            // 写入 Redis 缓存
+            permissionCache.set(user.getUsername(), perms);
 
             // 登录成功 生成 JWT
             String token = jwtUtil.generateToken(user.getUsername());
