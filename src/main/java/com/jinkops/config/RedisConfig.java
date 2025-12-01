@@ -32,7 +32,7 @@ public class RedisConfig {
         template.setHashValueSerializer(valueSerializer);
 
         //初始化配置生效
-        template.afterPropertiesSet();
+        template.afterPropertiesSet();  
         return template;
     }
 }

@@ -1,4 +1,4 @@
-package com.jinkops.cache;
+package com.jinkops.cache.service;
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
