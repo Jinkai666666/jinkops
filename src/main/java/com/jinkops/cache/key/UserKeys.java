@@ -4,7 +4,9 @@ package com.jinkops.cache.key;
 public class UserKeys {
 
     // 用户信息缓存key
+    private static final String USER_INFO_PREFIX = "jinkops:user:info:";
+
     public static String userInfo(String username) {
-        return "user:info:" + username;
+        return USER_INFO_PREFIX + username;
     }
 }

@@ -1,9 +1,13 @@
 package com.jinkops.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jinkops.cache.key.UserKeys;
+import com.jinkops.cache.service.CacheService;
 import com.jinkops.entity.user.User;
 import com.jinkops.exception.BizException;
 import com.jinkops.exception.ErrorCode;
 import com.jinkops.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,6 +17,12 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
+
+    @Autowired
+    private CacheService cacheService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     // 注入 repository
     public UserService(UserRepository userRepository) {
@@ -25,7 +35,7 @@ public class UserService {
     }
 
     // 用户名查
-    public User getByUsername(String username) {
+    public User findByUsername(String username) {
         return userRepository.findByUsername(username);
     }
 
@@ -49,5 +59,28 @@ public class UserService {
         return  userRepository.findById(id);
     }
 
+    //查缓存
+    public User getUserFromCache(String username) {
+       //规范化 key
+        String key = UserKeys.userInfo(username);
+        //Redis 拿值
+        String json = cacheService.get(key);
+        if (json == null) {
+            return null;
+        }try{
+            return objectMapper.readValue(json,User.class);
+        }catch (Exception e){
+            return null ;
+        }
+    }
+
+    //置入缓存
+    public void setUserCache(String username, User user) {
+        try {
+            String key = UserKeys.userInfo(username);
+            String json = objectMapper.writeValueAsString(user);
+            cacheService.set(key,json,3600);
+        }catch (Exception ignored){}
+    }
 
 }

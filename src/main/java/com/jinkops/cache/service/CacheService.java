@@ -26,4 +26,19 @@ public class CacheService {
     public void delete(String key) {
         redis.delete(key);
     }
+
+    // 判断是否存在
+    public Boolean exists(String key) {
+        return redis.hasKey(key);
+    }
+
+    // 设置过期时间
+    public void expire(String key, long ttlSeconds) {
+        redis.expire(key, ttlSeconds, TimeUnit.SECONDS);
+    }
+
+    // 查询剩余 TTL
+    public Long ttl(String key) {
+        return redis.getExpire(key);
+    }
 }
