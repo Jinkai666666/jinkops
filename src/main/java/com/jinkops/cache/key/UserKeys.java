@@ -9,4 +9,8 @@ public class UserKeys {
     public static String userInfo(String username) {
         return USER_INFO_PREFIX + username;
     }
+    //分页
+    public static String userListPage(int page, int size) {
+        return "user:list:page"+page+"-"+size;
+    }
 }

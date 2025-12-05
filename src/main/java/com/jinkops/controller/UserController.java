@@ -4,6 +4,7 @@ import com.jinkops.annotation.OperationLog;
 import com.jinkops.entity.user.User;
 import com.jinkops.service.UserService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -69,5 +70,22 @@ public class UserController {
 
         return user;
     }
+    //更新用户
+    @OperationLog("更新用户")
+    @PutMapping
+    public User updateUser(@RequestBody User user) {
+        return userService.updateUser(user);
+    }
+
+
+    @GetMapping("/page")
+    public Page<User> page(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return userService.pageUsers(page, size);
+    }
+
+
 
 }
