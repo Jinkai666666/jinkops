@@ -2,6 +2,7 @@ package com.jinkops.cache.service;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 @Service
 public class CacheService {
@@ -28,17 +29,22 @@ public class CacheService {
     }
 
     // 判断是否存在
-    public Boolean exists(String key) {
-        return redis.hasKey(key);
+    public boolean exists(String key) {
+        return Boolean.TRUE.equals(redis.hasKey(key));
     }
 
-    // 设置过期时间
-    public void expire(String key, long ttlSeconds) {
-        redis.expire(key, ttlSeconds, TimeUnit.SECONDS);
+
+    // 查询剩余 TTL（秒）
+    public long ttl(String key) {
+        Long expire = redis.getExpire(key, TimeUnit.SECONDS);
+        return expire == null ? -2 : expire;  // 防止返回 null
+    }
+    //删除分页 缓存
+    public void deleteByPrefix(String prefix) {
+        Set<String> keys = redis.keys(prefix + "*");
+        if (keys != null && !keys.isEmpty()) {
+            redis.delete(keys);
+        }
     }
 
-    // 查询剩余 TTL
-    public Long ttl(String key) {
-        return redis.getExpire(key);
-    }
 }
