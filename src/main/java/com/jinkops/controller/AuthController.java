@@ -6,6 +6,7 @@ import com.jinkops.entity.user.User;
 import com.jinkops.service.UserService;
 import com.jinkops.util.JwtUtil;
 import com.jinkops.vo.ApiResponse;
+import com.jinkops.vo.LoginResponse;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -35,50 +36,51 @@ public class AuthController {
     //  登录接口
     @OperationLog("用户登录")
     @PostMapping("/login")
-    public Map<String, Object> login(@RequestBody User user) {
-        Map<String, Object> result = new HashMap<>();
+    public ApiResponse<LoginResponse> login(@RequestBody User user) {
+
         try {
+            // Security 认证账号密码
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             user.getUsername(),
                             user.getPassword())
             );
 
-
-
-
-            // 查询该用户的权限集合
+            // 从userdetails获取权限集合
             org.springframework.security.core.userdetails.User userDetails =
                     (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
 
+            //权限
             var authorities = userDetails.getAuthorities();
-
+            //权限转成能用的字符串 Set
             Set<String> perms = authorities.stream()
                     .map(a -> a.getAuthority())
                     .collect(Collectors.toSet());
 
-
-            // 写入 Redis 缓存
+            // 写入 Redis
             permissionCache.set(user.getUsername(), perms);
 
-            // 登录成功 生成 JWT
+            // 生成 token
             String token = jwtUtil.generateToken(user.getUsername());
-            result.put("code", 200);
-            result.put("msg", "登录成功");
-            result.put("token", token);
+
+            //构建 LoginResponse
+            LoginResponse resp = new LoginResponse();
+            resp.setToken(token);
+
+            return ApiResponse.success("登录成功", resp);
+
         } catch (AuthenticationException e) {
-            result.put("code", 401);
-            result.put("msg", "用户名或密码错误");
+            return ApiResponse.fail(401, "用户名或密码错误");
         }
-        return result;
     }
+
 
     //  校验 Token
     @GetMapping("/verify")
     public ApiResponse<String> verify(@RequestParam String token) {
         try {
             String username = jwtUtil.parseToken(token).getSubject();
-            return ApiResponse.success("Token有效：" + username, null);
+            return ApiResponse.success("Token有效：" ,username);
         } catch (Exception e) {
             return ApiResponse.fail(401, "Token无效或已过期");
         }

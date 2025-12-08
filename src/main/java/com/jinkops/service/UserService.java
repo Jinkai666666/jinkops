@@ -9,9 +9,12 @@ import com.jinkops.exception.ErrorCode;
 import com.jinkops.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,6 +30,10 @@ public class UserService {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
 
 
     ////随机 TTL 方法
@@ -48,6 +55,11 @@ public class UserService {
     public User findByUsername(String username) {
         String key = UserKeys.userInfo(username);
         String json = cacheService.get(key);
+        if (json == null) {
+            log.info("user cache miss, key={}", key);
+        } else {
+            log.info("user cache hit, key={}", key);
+        }
         // 空值缓存命中
         if ("null".equals(json)) {
             return null;
@@ -73,12 +85,14 @@ public class UserService {
         try {
             cacheService.set(key, objectMapper.writeValueAsString(user), randomTtl());
         } catch (Exception ignored) {}
+        System.out.println(passwordEncoder.encode("你的密码"));
 
         return user;
     }
 
     //  新增用户
     public User addUser(User user) {
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);
     }
     //  删除用户
@@ -138,7 +152,7 @@ public class UserService {
 
         }
         dbUser.setEmail(user.getEmail());
-        dbUser.setPassword(user.getPassword());
+        dbUser.setPassword(passwordEncoder.encode(user.getPassword()));
 
         // 保存 DB
         User updated = userRepository.save(dbUser);
