@@ -18,7 +18,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @Aspect
 @Component
+
 public class PermissionAspect {
+
     // 拦截所有带 @RequirePermission 的方法
     @Before("@annotation(requirePermission)")
     public void checkPermission(JoinPoint joinPoint, RequirePermission requirePermission) {
