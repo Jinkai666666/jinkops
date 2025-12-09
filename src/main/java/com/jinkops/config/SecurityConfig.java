@@ -45,7 +45,8 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/v3/api-docs/**",
                                 "/api-docs/**",
-                                "/webjars/**").permitAll() // 放行登录注册
+                                "/webjars/**").permitAll()
+                        .requestMatchers("/api/test/**").permitAll()   // 放行登录注册
                         .anyRequest().authenticated()            // 其余都需要登录
                 )
                 .formLogin(form -> form.disable())  // 禁用默认登录页

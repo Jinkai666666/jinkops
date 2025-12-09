@@ -31,6 +31,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
+        String uri = request.getRequestURI();
+
+        // 白名单：这些接口不需要走 JWT 校验
+        if (uri.startsWith("/api/test/")
+                || uri.startsWith("/api/auth/")
+                || uri.startsWith("/doc.html")
+                || uri.startsWith("/swagger")
+                || uri.startsWith("/v3/api-docs")
+                || uri.startsWith("/swagger-ui")
+        ) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
 
         String authHeader = request.getHeader("Authorization");
 

@@ -11,7 +11,6 @@ public class JinkopsApplication {
         SpringApplication.run(JinkopsApplication.class, args);
 
         PasswordEncoder encoder = new BCryptPasswordEncoder();
-        System.out.println(encoder.encode("123456"));
 
     }
 }
