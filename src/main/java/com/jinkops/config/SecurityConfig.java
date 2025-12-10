@@ -4,6 +4,7 @@ import com.jinkops.service.CustomUserDetailsService;
 import com.jinkops.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -21,6 +22,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity //开启 @PreAuthorize
 @Configuration //配置类
 @EnableWebSecurity
+@ComponentScan(basePackages = "com.jinkops")
 public class SecurityConfig {
 
     private final CustomUserDetailsService customUserDetailsService;

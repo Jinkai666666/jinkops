@@ -9,12 +9,14 @@ import com.jinkops.repository.UserRepository;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Set;
 
 @Configuration
+@ComponentScan(basePackages = "com.jinkops")
 public class RbacDataInitializer {
 
     @Bean

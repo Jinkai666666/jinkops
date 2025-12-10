@@ -5,14 +5,30 @@ spring:
     username: root
     password: "030412"
 
+  main:
+    lazy-initialization: true
+    banner-mode: "off"
+
+  devtools:
+    restart:
+      enabled: false
+
   jpa:
+    open-in-view: false
     hibernate:
-      ddl-auto: update
-    show-sql: false
+      ddl-auto: none
+      show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true
+        jdbc.lob.non_contextual_creation: true
+
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.web.servlet.MultipartAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration
+      - org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
 
   data:
     redis:
@@ -24,9 +40,13 @@ spring:
 server:
   port: 8080
 
+
 logging:
   level:
-    root: ERROR
+    root: OFF                        # Spring 全关闭
+    com.jinkops: INFO                # 仅项目日志输出
+    org.springframework.boot.StartupInfoLogger: INFO  # 启动时间显示
+
   pattern:
     console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} [traceId=%X{traceId}] %clr(%-5level) %clr(%logger{36}){cyan} - %msg%n"
 
