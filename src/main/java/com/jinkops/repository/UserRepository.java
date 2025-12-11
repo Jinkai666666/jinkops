@@ -3,11 +3,11 @@ package com.jinkops.repository;
 import com.jinkops.entity.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-// 继承 JpaRepository<User, Long> 自动生成增删改查
+// 繼承 JpaRepository<User, Long> 自動生成增刪改查
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    // 按用户名查
+    // 按用戶名查
     User findByUsername(String username);
-    //删除 用户
+    //刪除 用戶
     void deleteUserByUsername(String Username);
 }

@@ -1,17 +1,17 @@
 package com.jinkops.exception;
 
 
-//可预期的业务问题
+//可預期的業務問題
 public class BizException extends RuntimeException {
     private final ErrorCode errorCode;
 
 
     public BizException(ErrorCode errorCode, String detail) {
         super(errorCode.getMessage() + "：" + detail);
-        //把错误信息传给父类（方便打印日志）
+        //把錯誤信息傳給父類（方便打印日誌）
         this.errorCode = errorCode;
     }
-    //简易抛错
+    //簡易拋錯
     public BizException(ErrorCode errorCode) {
         super(errorCode.getMessage());
         this.errorCode = errorCode;

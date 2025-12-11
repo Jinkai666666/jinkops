@@ -18,23 +18,23 @@ public class PermissionCache {
 
     // Redis 的 key，例 perm:admin、perm:root
     private String key(String username) {
-        return "perm:" + username;  // 正确的 key：perm:root
+        return "perm:" + username;  // 正確的 key：perm:root
     }
 
-    // 权限集合缓存到 Redis，缓存时长 24 小时
+    // 權限集合緩存到 Redis，緩存時長 24 小時
     // 例：set("root", ["sys:user:list", "sys:user:update"])
     public void set(String username, Set<String> perms) {
         redis.opsForValue().set(key(username), perms, 24, TimeUnit.HOURS);
     }
 
 
-    // 从 Redis 中读取权限集合
-    // 读不到就说明缓存不存在（可能过期）
+    // 從 Redis 中讀取權限集合
+    // 讀不到就說明緩存不存在（可能過期）
     public Set<String> get(String username) {
         Object obj = redis.opsForValue().get(key(username));
         return obj == null ? null : (Set<String>) obj;
     }
-    // 删除某个用户的权限缓存
+    // 刪除某個用戶的權限緩存
     public void delete(String username) {
         redis.delete(key(username));
     }

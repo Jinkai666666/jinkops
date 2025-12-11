@@ -13,15 +13,15 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 public class RedisConfig {
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
-        // 新建一个 RedisTemplate
+        // 新建一個 RedisTemplate
         RedisTemplate<String, Object> template = new RedisTemplate<>();
-        // 连接
+        // 連接
         template.setConnectionFactory(factory);
 
-        // 序列化，存进去前转格式
+        // 序列化，存進去前轉格式
         //序列化成字符串
         StringRedisSerializer keySerializer = new StringRedisSerializer();
-        // value 转成 JSON
+        // value 轉成 JSON
         GenericJackson2JsonRedisSerializer valueSerializer = new GenericJackson2JsonRedisSerializer();
 
         // key 字符格式存

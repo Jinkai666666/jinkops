@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
 
-//角色表。一个角色可以对应多个权限
+//角色表。一個角色可以對應多個權限
 
 @Entity
 @Table(name = "sys_role")
@@ -14,11 +14,11 @@ public class Role {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 角色编码 如：ADMIN、USER
+    // 角色編碼 如：ADMIN、USER
     @Column(nullable = false, unique = true)
     private String code;
 
-    // 角色下面挂的权限
+    // 角色下面掛的權限
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "sys_role_permission",

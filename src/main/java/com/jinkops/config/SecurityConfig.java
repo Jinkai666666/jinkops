@@ -19,8 +19,8 @@ import com.jinkops.security.JwtAuthenticationFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 
-@EnableMethodSecurity //开启 @PreAuthorize
-@Configuration //配置类
+@EnableMethodSecurity //開啓 @PreAuthorize
+@Configuration //配置類
 @EnableWebSecurity
 @ComponentScan(basePackages = "com.jinkops")
 public class SecurityConfig {
@@ -28,7 +28,7 @@ public class SecurityConfig {
     private final CustomUserDetailsService customUserDetailsService;
 
     private final JwtAuthenticationFilter jwtFilter;
-    // 构造注入
+    // 構造注入
 
     public SecurityConfig(CustomUserDetailsService customUserDetailsService,
                           JwtAuthenticationFilter jwtFilter) {
@@ -39,7 +39,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // 关闭 CSRF
+                .csrf(csrf -> csrf.disable()) // 關閉 CSRF
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**",
                                 "/doc.html",
@@ -48,11 +48,12 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/api-docs/**",
                                 "/webjars/**").permitAll()
-                        .requestMatchers("/api/test/**").permitAll()   // 放行登录注册
-                        .anyRequest().authenticated()            // 其余都需要登录
+                        .requestMatchers("/api/test/**").permitAll()
+                        .requestMatchers("/api/lock/user/**").permitAll()// 放行登錄註冊
+                        .anyRequest().authenticated()            // 其餘都需要登錄
                 )
-                .formLogin(form -> form.disable())  // 禁用默认登录页
-                .httpBasic(basic -> basic.disable()); // 禁用弹窗登录
+                .formLogin(form -> form.disable())  // 禁用默認登錄頁
+                .httpBasic(basic -> basic.disable()); // 禁用彈窗登錄
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -60,10 +61,10 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();// 密码加密器
+        return new BCryptPasswordEncoder();// 密碼加密器
     }
 
-    // 注册认证提供者（指定用户查找逻辑 + 密码校验逻辑）
+    // 註冊認證提供者（指定用戶查找邏輯 + 密碼校驗邏輯）
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
@@ -71,7 +72,7 @@ public class SecurityConfig {
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }
-    // 暴露认证管理器（登录认证的总入口，让 Controller 可以直接调用认证）
+    // 暴露認證管理器（登錄認證的總入口，讓 Controller 可以直接調用認證）
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();

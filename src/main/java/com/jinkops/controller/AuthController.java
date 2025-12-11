@@ -33,56 +33,56 @@ public class AuthController {
     private final PermissionCache permissionCache;
 
     private final JwtUtil jwtUtil;
-    //  登录接口
-    @OperationLog("用户登录")
+    //  登錄接口
+    @OperationLog("用戶登錄")
     @PostMapping("/login")
     public ApiResponse<LoginResponse> login(@RequestBody User user) {
 
         try {
-            // Security 认证账号密码
+            // Security 認證賬號密碼
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             user.getUsername(),
                             user.getPassword())
             );
 
-            // 从userdetails获取权限集合
+            // 從userdetails獲取權限集合
             org.springframework.security.core.userdetails.User userDetails =
                     (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
 
-            //权限
+            //權限
             var authorities = userDetails.getAuthorities();
-            //权限转成能用的字符串 Set
+            //權限轉成能用的字符串 Set
             Set<String> perms = authorities.stream()
                     .map(a -> a.getAuthority())
                     .collect(Collectors.toSet());
 
-            // 写入 Redis
+            // 寫入 Redis
             permissionCache.set(user.getUsername(), perms);
 
             // 生成 token
             String token = jwtUtil.generateToken(user.getUsername());
 
-            //构建 LoginResponse
+            //構建 LoginResponse
             LoginResponse resp = new LoginResponse();
             resp.setToken(token);
 
-            return ApiResponse.success("登录成功", resp);
+            return ApiResponse.success("登錄成功", resp);
 
         } catch (AuthenticationException e) {
-            return ApiResponse.fail(401, "用户名或密码错误");
+            return ApiResponse.fail(401, "用戶名或密碼錯誤");
         }
     }
 
 
-    //  校验 Token
+    //  校驗 Token
     @GetMapping("/verify")
     public ApiResponse<String> verify(@RequestParam String token) {
         try {
             String username = jwtUtil.parseToken(token).getSubject();
             return ApiResponse.success("Token有效：" ,username);
         } catch (Exception e) {
-            return ApiResponse.fail(401, "Token无效或已过期");
+            return ApiResponse.fail(401, "Token無效或已過期");
         }
     }
 

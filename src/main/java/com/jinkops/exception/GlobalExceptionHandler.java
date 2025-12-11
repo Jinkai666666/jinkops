@@ -4,14 +4,14 @@ import com.jinkops.vo.ApiResponse;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-//全局异常处理
-//负责统一拦截项目中所有异常，并格式化输出
+//全局異常處理
+//負責統一攔截項目中所有異常，並格式化輸出
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
 
-    //处理业务异常
+    //處理業務異常
 
     @ExceptionHandler(BizException.class)
     public ApiResponse<?> handleBizException(BizException e) {
@@ -19,11 +19,11 @@ public class GlobalExceptionHandler {
     }
 
 
-    //处理其他未捕获的异常
+    //處理其他未捕獲的異常
 
     @ExceptionHandler(Exception.class)
     public ApiResponse<?> handleException(Exception e) {
-        // 保留系统异常原始信息给日志，返回前端固定提示
+        // 保留系統異常原始信息給日誌，返回前端固定提示
         e.printStackTrace();
         return ApiResponse.fail(ErrorCode.INTERNAL_ERROR);
     }

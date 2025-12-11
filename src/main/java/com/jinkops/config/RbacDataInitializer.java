@@ -27,12 +27,12 @@ public class RbacDataInitializer {
 
         return args -> {
 
-            // 如果用户表有数据，直接跳过
+            // 如果用戶表有數據，直接跳過
             if (userRepo.count() > 0) {
                 return;
             }
 
-            // 创建权限
+            // 創建權限
             Permission p1 = new Permission();
             p1.setCode("sys:user:list");
 
@@ -42,19 +42,19 @@ public class RbacDataInitializer {
             permRepo.save(p1);
             permRepo.save(p2);
 
-            // 创建角色
+            // 創建角色
             Role admin = new Role();
             admin.setCode("ADMIN");
             admin.setPermissions(Set.of(p1, p2));
 
             Role normal = new Role();
             normal.setCode("USER");
-            normal.setPermissions(Set.of(p1)); // 普通用户只有查询权限
+            normal.setPermissions(Set.of(p1)); // 普通用戶只有查詢權限
 
             roleRepo.save(admin);
             roleRepo.save(normal);
 
-            // 创建一个管理员账号
+            // 創建一個管理員賬號
             User u1 = new User();
             u1.setUsername("admin");
             u1.setPassword(encoder.encode("123456"));
@@ -63,7 +63,7 @@ public class RbacDataInitializer {
 
             userRepo.save(u1);
 
-            // 创建普通用户
+            // 創建普通用戶
             User u2 = new User();
             u2.setUsername("user");
             u2.setPassword(encoder.encode("123456"));

@@ -20,43 +20,43 @@ public class UserController {
         this.userService = userService;
     }
 
-    // 查询全部用户
-    @OperationLog("查询全部用户")
+    // 查詢全部用戶
+    @OperationLog("查詢全部用戶")
     @GetMapping
     public List<User> getAllUsers() {
         return userService.getAllUsers();
     }
 
-    // 根据用户名查询（自动带缓存）
-    @OperationLog("根据用户名查询用户")
+    // 根據用戶名查詢（自動帶緩存）
+    @OperationLog("根據用戶名查詢用戶")
     @GetMapping("/{username}")
     public User getUserByUsername(@PathVariable String username) {
         return userService.findByUsername(username);
     }
 
-    // 新增用户
-    @OperationLog("新增用户")
+    // 新增用戶
+    @OperationLog("新增用戶")
     @PostMapping
     public User addUser(@RequestBody User user) {
         return userService.addUser(user);
     }
 
-    // 删除用户
-    @OperationLog("删除用户")
+    // 刪除用戶
+    @OperationLog("刪除用戶")
     @DeleteMapping("/{username}")
     public String deleteUser(@PathVariable String username) {
         userService.deleteUser(username);
         return "User deleted: " + username;
     }
 
-    // 更新用户
-    @OperationLog("更新用户")
+    // 更新用戶
+    @OperationLog("更新用戶")
     @PutMapping
     public User updateUser(@RequestBody User user) {
         return userService.updateUser(user);
     }
 
-    // 分页用户查询（带缓存）
+    // 分頁用戶查詢（帶緩存）
     @GetMapping("/page")
     public Page<User> page(
             @RequestParam(defaultValue = "1") int page,
