@@ -13,19 +13,20 @@ import com.jinkops.repository.OperationLogRepository;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.UUID;
 
 /**
- * 操作日志切面
+ * 操作日誌切面
  * Operation Log Aspect
- * 自动打印方法名、参数、耗时、traceId
+ * 自動打印方法名、參數、耗時、traceId
  */
-@Aspect // 切面类
-@Component //  Spring 扫描加载到容器
+@Aspect // 切面類
+@Component //  Spring 掃描加載到容器
 @Slf4j
 public class OperationLogAspect {
 
 
-    //入库配置
+    //入庫配置
     private final OperationLogRepository repository;
 
     public OperationLogAspect(OperationLogRepository operationLogRepository) {
@@ -33,81 +34,86 @@ public class OperationLogAspect {
     }
 
     /**
-     * 环绕通知（Around Advice）
-     * 拦截所有标注了 @OperationLog 的方法
-     * @param joinPoint      代表当前被调用的方法 (method execution context)
-     * @param operationLog   注解本身，可取出 value() 的描述文字
+     * 環繞通知（Around Advice）
+     * 攔截所有標註了 @OperationLog 的方法
+     * @param joinPoint      代表當前被調用的方法 (method execution context)
+     * @param operationLog   註解本身，可取出 value() 的描述文字
      */
     @Around("@annotation(operationLog)")
     public Object recordLog(ProceedingJoinPoint joinPoint, OperationLog operationLog) throws Throwable {
 
-        // 记录方法开始时间（用来计算执行耗时）
+        // 記錄方法開始時間（用來計算執行耗時）
         long start = System.currentTimeMillis();
 
-        // 获取方法信息 (method info)
+        // 獲取方法信息 (method info)
         String methodName = joinPoint.getSignature().getName();        // 方法名 (method name)
-        String className = joinPoint.getTarget().getClass().getSimpleName(); // 类名 (class name)
-        String args = Arrays.toString(joinPoint.getArgs());            // 参数数组转字符串 (args)
-        String desc = operationLog.value();                            // 从注解里取描述 (annotation description)
+        String className = joinPoint.getTarget().getClass().getSimpleName(); // 類名 (class name)
+        String args = Arrays.toString(joinPoint.getArgs());            // 參數數組轉字符串 (args)
+        String desc = operationLog.value();                            // 從註解裏取描述 (annotation description)
 
 
-        //全链路tranceId 从MDC 取得
+        //全鏈路tranceId 從MDC 取得
+        // traceId 從 MDC 取，缺失則生成一個，避免入庫時空值報錯
         String traceId = MDC.get("traceId");
+        if (traceId == null || traceId.isBlank()) {
+            traceId = UUID.randomUUID().toString();
+            MDC.put("traceId", traceId);
+        }
 
-        // 当前用户
+        // 當前用戶
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
 
         try {
-            // 执行目标方法 (execute the original method)
+            // 執行目標方法 (execute the original method)
             Object result = joinPoint.proceed();
 
-            // 计算耗时
+            // 計算耗時
             long time = System.currentTimeMillis() - start;
 
-            //  打印正常日志（INFO）
-            // traceId 已自动从 MDC 输出
-            log.info("操作日志 => [{}#{}] 描述: {} 参数: {} 耗时: {}ms [traceId={} user={}]",
+            //  打印正常日誌（INFO）
+            // traceId 已自動從 MDC 輸出
+            log.info("操作日誌 => [{}#{}] 描述: {} 參數: {} 耗時: {}ms [traceId={} user={}]",
                     className, methodName, desc, args, time,traceId,username);
 
-            //日志入库
+            //日誌入庫
             OperationLogEntity entity = new OperationLogEntity();
             entity.setUsername(username);
-            entity.setOperation(desc);  // <<< 对应 operation 字段
+            entity.setOperation(desc);  // <<< 對應 operation 字段
             entity.setTraceId(traceId);
             entity.setClassName(className);
             entity.setMethodName(methodName);
             entity.setArgs(args);
             entity.setDescription(desc);
-            entity.setElapsedTime(time);  // <<< 对应 elapsedTime 字段
-            entity.setTimestamp(LocalDateTime.now()); // <<< 明确写入
+            entity.setElapsedTime(time);  // <<< 對應 elapsedTime 字段
+            entity.setTimestamp(LocalDateTime.now()); // <<< 明確寫入
             repository.save(entity);
-            // 返回原方法的执行结果
+            // 返回原方法的執行結果
             return result;
 
         } catch (Throwable e) {
-            // 捕获异常时打印错误日志
+            // 捕獲異常時打印錯誤日誌
             long time = System.currentTimeMillis() - start;
 
-            log.error("操作异常 => [{}#{}] 描述: {} 参数: {} 耗时: {}ms 错误: {} [traceId={} user={}]",
+            log.error("操作異常 => [{}#{}] 描述: {} 參數: {} 耗時: {}ms 錯誤: {} [traceId={} user={}]",
                     className, methodName, desc, args, time, e.getMessage(), traceId, username);
 
 
-            // 异常日志入库
+            // 異常日誌入庫
             OperationLogEntity entity = new OperationLogEntity();
             entity.setUsername(username);
-            entity.setOperation(desc + " (异常)");
+            entity.setOperation(desc + " (異常)");
             entity.setTraceId(traceId);
             entity.setClassName(className);
             entity.setMethodName(methodName);
             entity.setArgs(args);
-            entity.setDescription(desc + " (异常)");
+            entity.setDescription(desc + " (異常)");
             entity.setElapsedTime(time);
             entity.setTimestamp(LocalDateTime.now());
 
             repository.save(entity);
 
-            // 把异常继续往外抛
+            // 把異常繼續往外拋
             throw e;
         }
     }

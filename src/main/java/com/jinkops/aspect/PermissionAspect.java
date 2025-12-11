@@ -21,36 +21,36 @@ import java.util.stream.Collectors;
 
 public class PermissionAspect {
 
-    // 拦截所有带 @RequirePermission 的方法
+    // 攔截所有帶 @RequirePermission 的方法
     @Before("@annotation(requirePermission)")
     public void checkPermission(JoinPoint joinPoint, RequirePermission requirePermission) {
-        // 从注解拿权限码
+        // 從註解拿權限碼
         String[] requiredPermissions = requirePermission.value();
         PermissionMode mode = requirePermission.mode();
-        //从Security 拿到当前用户
+        //從Security 拿到當前用戶
         Authentication auth =  SecurityContextHolder.getContext().getAuthentication();
 
         if (auth == null) {
-            //没登录 401
+            //沒登錄 401
             throw new BizException(ErrorCode.UNAUTHORIZED);
         }
 
-        //拿到用户权限集
+        //拿到用戶權限集
         Set<String> userPerm = auth.getAuthorities()
                 .stream()
-                //转换成字符串
+                //轉換成字符串
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toSet());
 
 
-        //判断权限（AND / OR）
+        //判斷權限（AND / OR）
         boolean allowed;
 
         if (mode == PermissionMode.AND) {
-            // 所有 requiredPermissions 用户都必须拥有
+            // 所有 requiredPermissions 用戶都必須擁有
             allowed = userPerm.containsAll(Set.of(requiredPermissions));
         } else {
-            // OR：只要用户有其中一个权限即可
+            // OR：只要用戶有其中一個權限即可
             allowed = false;
             for (String p : requiredPermissions) {
                 if (userPerm.contains(p)) {
@@ -60,7 +60,7 @@ public class PermissionAspect {
             }
         }
 
-        // 如果不满足权限：抛异常
+        // 如果不滿足權限：拋異常
         if (!allowed) {
             log.warn("Permission denied. required={}, userPerm={}", requiredPermissions, userPerm);
             throw new BizException(ErrorCode.FORBIDDEN);

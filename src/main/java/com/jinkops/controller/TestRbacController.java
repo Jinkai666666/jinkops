@@ -8,33 +8,33 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class TestRbacController {
 
-    // 无需权限
+    // 無需權限
     @GetMapping("/api/test/open")
     public String open() {
-        return "公开接口：无需任何权限";
+        return "公開接口：無需任何權限";
     }
 
-    // 普通权限：sys:user:list
+    // 普通權限：sys:user:list
     @RequirePermission("sys:user:list")
     @GetMapping("/api/test/user/list")
     public String userList() {
-        return "正常访问：你拥有 sys:user:list 权限";
+        return "正常訪問：你擁有 sys:user:list 權限";
     }
 
-    // 管理员权限：sys:user:update
+    // 管理員權限：sys:user:update
     @RequirePermission("sys:user:update")
     @GetMapping("/api/test/user/update")
     public String userUpdate() {
-        return "正常访问：你拥有 sys:user:update 权限（管理员权限）";
+        return "正常訪問：你擁有 sys:user:update 權限（管理員權限）";
     }
 
-    // 多权限 AND：sys:config:read + sys:config:reset 都要有
+    // 多權限 AND：sys:config:read + sys:config:reset 都要有
     @RequirePermission(
             value = {"sys:config:read", "sys:config:reset"},
             mode = PermissionMode.AND
     )
     @GetMapping("/api/test/config/reset")
     public String configReset() {
-        return "正常访问：sys:config:read + sys:config:reset 两个权限（AND）";
+        return "正常訪問：sys:config:read + sys:config:reset 兩個權限（AND）";
     }
 }

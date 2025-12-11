@@ -1,18 +1,25 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="true">
 
     <property name="LOG_PATH" value="logs"/>
 
-    <!-- 控制台输出 -->
+    <!-- 控制檯輸出（去掉顏色編碼，避免亂碼） -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [traceId=%X{traceId}] [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <!-- 根日志级别 -->
-    <root level="INFO">
+    <!-- 異步輸出，降低同步 IO 對請求的阻塞 -->
+    <appender name="ASYNC_CONSOLE" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>8192</queueSize>
+        <discardingThreshold>0</discardingThreshold>
         <appender-ref ref="CONSOLE"/>
+    </appender>
+
+    <!-- 根日誌級別 -->
+    <root level="INFO">
+        <appender-ref ref="ASYNC_CONSOLE"/>
     </root>
 
 </configuration>

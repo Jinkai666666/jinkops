@@ -1,9 +1,15 @@
-spring:
+﻿spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://43.139.59.233:3306/jinkops?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
     username: root
     password: "030412"
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 5
+      connection-timeout: 20000
+      idle-timeout: 600000
+      max-lifetime: 1800000
 
   main:
     lazy-initialization: true
@@ -22,6 +28,11 @@ spring:
       hibernate:
         format_sql: true
         jdbc.lob.non_contextual_creation: true
+        jdbc.batch_size: 50            # INSERT/UPDATE 批量優化
+        order_inserts: true
+        order_updates: true
+        batch_versioned_data: true
+        default_batch_fetch_size: 50   # 批量抓取關聯，減少往返次數
 
   autoconfigure:
     exclude:
@@ -43,9 +54,9 @@ server:
 
 logging:
   level:
-    root: OFF                        # Spring 全关闭
-    com.jinkops: INFO                # 仅项目日志输出
-    org.springframework.boot.StartupInfoLogger: INFO  # 启动时间显示
+    root: INFO                        # Spring 全局默認日誌級別
+    com.jinkops: INFO                 # 僅項目日誌輸出
+    org.springframework.boot.StartupInfoLogger: INFO  # 啓動時間顯示
 
   pattern:
     console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} [traceId=%X{traceId}] %clr(%-5level) %clr(%logger{36}){cyan} - %msg%n"
@@ -64,3 +75,5 @@ knife4j:
   enable: true
   setting:
     language: zh_cn
+
+

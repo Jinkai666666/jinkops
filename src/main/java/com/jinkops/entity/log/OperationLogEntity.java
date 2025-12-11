@@ -6,8 +6,8 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 操作日志实体类
- * 用于存储每次带 @OperationLog 注解的方法调用信息
+ * 操作日誌實體類
+ * 用於存儲每次帶 @OperationLog 註解的方法調用信息
  */
 @Entity
 @Table(name = "operation_log")
@@ -16,24 +16,24 @@ public class OperationLogEntity {
 
     public OperationLogEntity() {}
 
-    // 主键自增
+    // 主鍵自增
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 操作人用户名
+    // 操作人用戶名
     @Column(length = 64)
     private String username;
 
-    // 操作名称或类型（“新增用户”、“删除日志”等）
+    // 操作名稱或類型（“新增用戶”、“刪除日誌”等）
     @Column(length = 128)
     private String operation;
 
-    // traceId 用于日志全链路追踪
+    // traceId 用於日誌全鏈路追蹤
     @Column(nullable = false, length = 64)
     private String traceId;
 
-    // 类名
+    // 類名
     @Column(nullable = false, length = 128)
     private String className;
 
@@ -41,19 +41,19 @@ public class OperationLogEntity {
     @Column(nullable = false, length = 128)
     private String methodName;
 
-    // 方法参数（JSON化后的字符串）
+    // 方法參數（JSON化後的字符串）
     @Column(columnDefinition = "TEXT")
     private String args;
 
-    // 注解描述
+    // 註解描述
     @Column(length = 255)
     private String description;
 
-    // 耗时（毫秒）
+    // 耗時（毫秒）
     @Column(nullable = false)
     private Long elapsedTime;
 
-    // 记录时间
+    // 記錄時間
     @Column(nullable = false)
     private LocalDateTime timestamp = LocalDateTime.now();
 }

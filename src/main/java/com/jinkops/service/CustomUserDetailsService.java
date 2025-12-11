@@ -19,7 +19,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
 
-    // 构造注入，避免循环依赖
+    // 構造注入，避免循環依賴
     public CustomUserDetailsService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
@@ -29,23 +29,23 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         User user = userRepository.findByUsername(username);
         if (user == null) {
-            throw new UsernameNotFoundException("账号不存在");
+            throw new UsernameNotFoundException("賬號不存在");
         }
 
-        // 角色及权限全部展开 给予Security
+        // 角色及權限全部展開 給予Security
         Set<SimpleGrantedAuthority> authorities = new HashSet<>();
 
         for (Role role : user.getRoles()) {
-            // 角色本身当成权限给 Security
+            // 角色本身當成權限給 Security
             authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getCode()));
 
-            // 把角色下面的每个权限加进去
+            // 把角色下面的每個權限加進去
             for (Permission p : role.getPermissions()) {
                 authorities.add(new SimpleGrantedAuthority(p.getCode()));
             }
         }
 
-        // 返回给 Security
+        // 返回給 Security
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),

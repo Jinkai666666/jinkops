@@ -33,7 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String uri = request.getRequestURI();
 
-        // 白名单：这些接口不需要走 JWT 校验
+        // 白名單：這些接口不需要走 JWT 校驗
         if (uri.startsWith("/api/test/")
                 || uri.startsWith("/api/auth/")
                 || uri.startsWith("/doc.html")

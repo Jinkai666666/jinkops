@@ -3,13 +3,13 @@ package com.jinkops.annotation;
 import java.lang.annotation.*;
 
 /**
- * 自定义操作日志注解
- * 用于标记需要自动记录日志的方法
+ * 自定義操作日誌註解
+ * 用於標記需要自動記錄日誌的方法
  */
-@Target(ElementType.METHOD)  // 作用于方法
-@Retention(RetentionPolicy.RUNTIME) // 运行时生效
+@Target(ElementType.METHOD)  // 作用於方法
+@Retention(RetentionPolicy.RUNTIME) // 運行時生效
 @Documented
 public @interface OperationLog {
 
-    String value() default ""; // 日志描述，"用户登录" ."查询用户列表"
+    String value() default ""; // 日誌描述，"用戶登錄" ."查詢用戶列表"
 }

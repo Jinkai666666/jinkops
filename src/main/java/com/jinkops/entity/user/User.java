@@ -6,21 +6,21 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "sys_user") // 数据表：user
+@Table(name = "sys_user") // 數據表：user
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // 主键自增
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // 主鍵自增
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String username; // 用户名
+    private String username; // 用戶名
 
     @Column(nullable = false)
-    private String password; // 密码
+    private String password; // 密碼
 
-    private String email; // 邮箱
-    // 多对多：用户 ⇆ 角色
+    private String email; // 郵箱
+    // 多對多：用戶 ⇆ 角色
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "sys_user_role",

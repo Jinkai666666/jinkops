@@ -20,16 +20,16 @@ public class TestLockController {
         String value = redisLock.tryLock(key, 5);
 
         if (value == null) {
-            return "未获取到锁";
+            return "未獲取到鎖";
         }
 
-        System.out.println("进入业务代码区");
+        System.out.println("進入業務代碼區");
 
-        // 模拟业务执行
+        // 模擬業務執行
         Thread.sleep(3000);
 
         redisLock.unlock(key, value);
 
-        return "执行完成";
+        return "執行完成";
     }
 }

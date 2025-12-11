@@ -2,7 +2,7 @@ package com.jinkops.entity.user;
 
 import jakarta.persistence.*;
 
-//权限表
+//權限表
 
 @Entity
 @Table(name = "sys_permission")
@@ -12,7 +12,7 @@ public class Permission {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 权限编码，必须唯一
+    // 權限編碼，必須唯一
     @Column(nullable = false, unique = true)
     private String code;
 

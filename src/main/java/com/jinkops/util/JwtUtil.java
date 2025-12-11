@@ -11,15 +11,15 @@ import org.springframework.stereotype.Component;
 import java.security.Key;
 import java.util.Date;
 
-//JWT 工具类：生成与解析 Token
+//JWT 工具類：生成與解析 Token
 
 @Component
 public class JwtUtil {
 
-    // 建议生产环境放配置文件或环境变量
+    // 建議生產環境放配置文件或環境變量
     private  final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
-    // Token 有效期  24 小时
+    // Token 有效期  24 小時
     private  final long EXPIRATION_TIME = 24 * 60 * 60 * 1000;
 
     // 生成 Token
@@ -42,7 +42,7 @@ public class JwtUtil {
                 .parseClaimsJws(token)
                 .getBody();
     }
-    // 检查是否过期
+    // 檢查是否過期
     public  boolean isTokenExpired(String token) {
         try {
             return parseToken(token).getExpiration().before(new Date());
@@ -50,7 +50,7 @@ public class JwtUtil {
             return true;
         }
     }
-    //JwtAuthenticationFilter 需要的方法：提取用户名
+    //JwtAuthenticationFilter 需要的方法：提取用戶名
     public String extractUsername(String token) {
         try {
             return parseToken(token).getSubject();
@@ -59,7 +59,7 @@ public class JwtUtil {
         }
     }
 
-    // JwtAuthenticationFilter 需要的方法：验证 Token
+    // JwtAuthenticationFilter 需要的方法：驗證 Token
     public boolean validateToken(String token, org.springframework.security.core.userdetails.UserDetails userDetails) {
         try {
             String username = extractUsername(token);

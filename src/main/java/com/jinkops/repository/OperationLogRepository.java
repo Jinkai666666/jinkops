@@ -10,11 +10,11 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 
-// 日志入库操作接口
+// 日誌入庫操作接口
 @Repository
 public interface OperationLogRepository extends JpaRepository<OperationLogEntity, Long> {
 
-    // 模糊查询操作日志（根据用户名或操作描述）
+    // 模糊查詢操作日誌（根據用戶名或操作描述）
     @Query("SELECT l FROM OperationLogEntity l " +
             "WHERE LOWER(l.username) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "OR LOWER(l.operation) LIKE LOWER(CONCAT('%', :keyword, '%')) " +

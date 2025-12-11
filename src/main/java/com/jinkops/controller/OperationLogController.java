@@ -12,8 +12,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import java.time.LocalDateTime;
 
-// 操作日志控制器
-@Tag(name = "操作日志接口", description = "提供日志查询与搜索功能")
+// 操作日誌控制器
+@Tag(name = "操作日誌接口", description = "提供日誌查詢與搜索功能")
 @RestController
 @RequestMapping("/api/logs")
 public class OperationLogController {
@@ -24,15 +24,15 @@ public class OperationLogController {
         this.operationLogService = operationLogService;
     }
 
-    // 分页查询操作日志
-    @Operation(summary = "分页查询操作日志（按时间倒序）")
+    // 分頁查詢操作日誌
+    @Operation(summary = "分頁查詢操作日誌（按時間倒序）")
     @GetMapping
     public Page<OperationLogEntity> getLogs(Pageable pageable) {
         return operationLogService.getLogs(pageable);
     }
 
-    @Operation(summary = "模糊搜索日志（按时间倒序）")
-    // 模糊搜索日志
+    @Operation(summary = "模糊搜索日誌（按時間倒序）")
+    // 模糊搜索日誌
     @GetMapping("/search")
     public Page<OperationLogEntity> searchLogs(
             @RequestParam(required = false) String keyword,
@@ -40,7 +40,7 @@ public class OperationLogController {
         return operationLogService.searchLogs(keyword, pageable);
     }
 
-    @Operation(summary = "日志统一分页查询（keyword + 时间区间 + 分页）")
+    @Operation(summary = "日誌統一分頁查詢（keyword + 時間區間 + 分頁）")
     @PostMapping("/page")
     public Page<OperationLogEntity> page(@RequestBody LogQueryRequest req) {
 
@@ -50,12 +50,12 @@ public class OperationLogController {
                 Sort.by(Sort.Direction.DESC, "timestamp")
         );
 
-        // keyword 优先
+        // keyword 優先
         if (req.getKeyword() != null && !req.getKeyword().isBlank()) {
             return operationLogService.searchLogs(req.getKeyword(), pageable);
         }
 
-        // 时间区间过滤
+        // 時間區間過濾
         if (req.getStartTime() != null
                 && !req.getStartTime().isBlank()
                 && req.getEndTime() != null
@@ -70,7 +70,7 @@ public class OperationLogController {
             );
         }
 
-        // 默认查全部
+        // 默認查全部
         return operationLogService.getLogs(pageable);
     }
 
