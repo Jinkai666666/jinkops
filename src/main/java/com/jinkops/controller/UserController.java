@@ -64,4 +64,12 @@ public class UserController {
     ) {
         return userService.pageUsers(page, size);
     }
+
+    //测试接口
+    @PostMapping("/test/submit")
+    public void submit(@RequestParam Long userId,
+                       @RequestParam String bizKey) {
+        userService.submitOnce(userId, bizKey);
+    }
+
 }

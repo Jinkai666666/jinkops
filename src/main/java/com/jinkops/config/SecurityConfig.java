@@ -49,7 +49,10 @@ public class SecurityConfig {
                                 "/api-docs/**",
                                 "/webjars/**").permitAll()
                         .requestMatchers("/api/test/**").permitAll()
+                        .requestMatchers("/test/redisson/*").permitAll()
+                        .requestMatchers("/test/mq").permitAll()
                         .requestMatchers("/api/lock/user/**").permitAll()// 放行登錄註冊
+
                         .anyRequest().authenticated()            // 其餘都需要登錄
                 )
                 .formLogin(form -> form.disable())  // 禁用默認登錄頁

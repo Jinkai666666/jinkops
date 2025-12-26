@@ -1,6 +1,7 @@
 package com.jinkops.test;
-
+import com.jinkops.service.EventLogService;
 import com.jinkops.lock.RedisLock;
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -8,9 +9,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class TestLockController {
 
     private final RedisLock redisLock;
+    private  EventLogService eventLogService;
 
-    public TestLockController(RedisLock redisLock) {
+    public TestLockController(RedisLock redisLock,
+                              EventLogService eventLogService) {
         this.redisLock = redisLock;
+        this.eventLogService = eventLogService;
     }
 
     @GetMapping("/api/test/lock")
@@ -32,4 +36,10 @@ public class TestLockController {
 
         return "執行完成";
     }
+    @GetMapping("/test/mq")
+    public String testMq() {
+        eventLogService.sendTestLog();
+        return "ok";
+    }
+
 }

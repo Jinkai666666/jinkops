@@ -6,7 +6,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 
-@SpringBootApplication(scanBasePackages = "com.jinkops")
+@SpringBootApplication
 public class JinkopsApplication {
     public static void main(String[] args) {
         SpringApplication.run(JinkopsApplication.class, args);
