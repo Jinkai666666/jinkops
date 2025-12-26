@@ -11,6 +11,7 @@ public enum ErrorCode {
     USER_NOT_FOUND(404, "用戶不存在"),
     USER_EXIST(409, "用戶已存在"),
     SYSTEM_BUSY(429, "系統繁忙，請稍後再試"),
+    REPEAT_SUBMIT(409, "請勿重複提交"),
 
     UNAUTHORIZED(401, "未登錄或token無效"),
     FORBIDDEN(403, "無權限訪問"),

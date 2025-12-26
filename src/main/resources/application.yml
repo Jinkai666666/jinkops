@@ -11,6 +11,15 @@
       idle-timeout: 600000
       max-lifetime: 1800000
 
+
+  rabbitmq:
+    host: 43.139.59.233
+    port: 5672
+    username: jinkops
+    password: jinkops123
+    virtual-host: /
+    connection-timeout: 5000
+
   main:
     lazy-initialization: true
     banner-mode: "off"
@@ -45,8 +54,13 @@
     redis:
       host: 43.139.59.233
       port: 6379
-      password:
+
       database: 0
+  redisson:
+    singleServerConfig:
+      address: redis://43.139.59.233:6379
+      database: 0
+
 
 server:
   port: 8080

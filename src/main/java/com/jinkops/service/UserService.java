@@ -1,33 +1,30 @@
 package com.jinkops.service;
-
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jinkops.cache.key.UserKeys;
 import com.jinkops.cache.service.CacheService;
 import com.jinkops.entity.user.User;
 import com.jinkops.exception.BizException;
 import com.jinkops.exception.ErrorCode;
-import com.jinkops.lock.LockService;
 import com.jinkops.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
 @Slf4j
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
-
-    @Autowired
-    private LockService lockService;
 
     @Autowired
     private CacheService cacheService;
@@ -38,7 +35,8 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-
+    @Autowired
+    private RedissonClient redissonClient;
 
     ////隨機 TTL 方法
     private int randomTtl() {
@@ -89,6 +87,8 @@ public class UserService {
         try {
             cacheService.set(key, objectMapper.writeValueAsString(user), randomTtl());
         } catch (Exception ignored) {}
+
+        ////测试用
         System.out.println(passwordEncoder.encode("你的密碼"));
 
         return user;
@@ -223,39 +223,60 @@ public class UserService {
     public User createUser(User user) {
 
         String username = user.getUsername();
-        String key = "lock:user:create:" + username;
+        String lockKey = "lock:user:create:" + username;
 
-        //  加锁
-        String lockValue = lockService.tryLock(key, 5);
-        if (lockValue == null) {
-            throw new BizException(ErrorCode.SYSTEM_BUSY, "系统正在处理，请稍后再试");
-        }
+        RLock lock = redissonClient.getLock(lockKey);
 
         try {
+            lock.lock(); // 不给 TTL，Watchdog 生效
+
             // 判断是否重复
             User exist = userRepository.findByUsername(username);
             if (exist != null) {
                 throw new BizException(ErrorCode.USER_EXIST, "用户名已存在");
             }
 
-            //密码加密
-            String rawPassword = user.getPassword();
-            user.setPassword(passwordEncoder.encode(rawPassword));
-
-            // 保存用户
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
             User saved = userRepository.save(user);
 
-            // 5) 清缓存（因为有新用户）
             cacheService.deleteByPrefix("user:list:page:");
             log.info("page cache cleared after user create");
 
             return saved;
 
         } finally {
-            // 解锁（
-            lockService.unlock(key, lockValue);
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
         }
     }
+
+
+    public void submitOnce(Long userId, String bizKey) {
+        String lockKey = "lock:submit:" + userId + ":" + bizKey;
+        RLock lock = redissonClient.getLock(lockKey);
+
+        boolean locked;
+        try {
+            locked = lock.tryLock(0, 5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            throw new BizException(ErrorCode.REPEAT_SUBMIT);
+        }
+
+        if (!locked) {
+            throw new BizException(ErrorCode.REPEAT_SUBMIT);
+        }
+
+        try {
+            // 模拟业务
+            log.info("submit once success userId={}", userId);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+
+
 
 
 }
