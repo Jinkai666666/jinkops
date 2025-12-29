@@ -21,7 +21,7 @@
     connection-timeout: 5000
 
   main:
-    lazy-initialization: true
+    lazy-initialization: false
     banner-mode: "off"
 
   devtools:

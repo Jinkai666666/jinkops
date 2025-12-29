@@ -36,10 +36,6 @@ public class TestLockController {
 
         return "執行完成";
     }
-    @GetMapping("/test/mq")
-    public String testMq() {
-        eventLogService.sendTestLog();
-        return "ok";
-    }
+
 
 }

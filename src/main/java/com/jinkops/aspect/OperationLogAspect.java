@@ -1,16 +1,20 @@
 package com.jinkops.aspect;
 
 import com.jinkops.annotation.OperationLog;
+import com.jinkops.service.EventLogService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.MDC;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import com.jinkops.entity.log.OperationLogEntity;
 import com.jinkops.repository.OperationLogRepository;
 
+import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.UUID;
@@ -23,25 +27,21 @@ import java.util.UUID;
 @Aspect // 切面類
 @Component //  Spring 掃描加載到容器
 @Slf4j
+@RequiredArgsConstructor
 public class OperationLogAspect {
 
 
     //入庫配置
     private final OperationLogRepository repository;
-
-    public OperationLogAspect(OperationLogRepository operationLogRepository) {
-        this.repository = operationLogRepository;
-    }
-
+    private final EventLogService eventLogService;
     /**
      * 環繞通知（Around Advice）
      * 攔截所有標註了 @OperationLog 的方法
      * @param joinPoint      代表當前被調用的方法 (method execution context)
      * @param operationLog   註解本身，可取出 value() 的描述文字
      */
-    @Around("@annotation(operationLog)")
-    public Object recordLog(ProceedingJoinPoint joinPoint, OperationLog operationLog) throws Throwable {
-
+    @Around("@annotation(com.jinkops.annotation.OperationLog)")
+    public Object recordLog(ProceedingJoinPoint joinPoint) throws Throwable{
         // 記錄方法開始時間（用來計算執行耗時）
         long start = System.currentTimeMillis();
 
@@ -49,7 +49,12 @@ public class OperationLogAspect {
         String methodName = joinPoint.getSignature().getName();        // 方法名 (method name)
         String className = joinPoint.getTarget().getClass().getSimpleName(); // 類名 (class name)
         String args = Arrays.toString(joinPoint.getArgs());            // 參數數組轉字符串 (args)
-        String desc = operationLog.value();                            // 從註解裏取描述 (annotation description)
+        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+        Method method = signature.getMethod();
+
+        OperationLog operationLog = method.getAnnotation(OperationLog.class);
+        String desc = operationLog != null ? operationLog.value() : "";
+
 
 
         //全鏈路tranceId 從MDC 取得
@@ -89,6 +94,7 @@ public class OperationLogAspect {
             entity.setTimestamp(LocalDateTime.now()); // <<< 明確寫入
             repository.save(entity);
             // 返回原方法的執行結果
+            eventLogService.sendOperationLog(entity);
             return result;
 
         } catch (Throwable e) {
@@ -112,6 +118,8 @@ public class OperationLogAspect {
             entity.setTimestamp(LocalDateTime.now());
 
             repository.save(entity);
+
+            eventLogService.sendOperationLog(entity);
 
             // 把異常繼續往外拋
             throw e;
