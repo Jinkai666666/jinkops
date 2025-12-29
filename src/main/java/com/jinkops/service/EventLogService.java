@@ -1,21 +1,24 @@
 package com.jinkops.service;
 
 import com.jinkops.config.RabbitConfig;
+import com.jinkops.entity.log.OperationLogEntity;
+import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class EventLogService {
 
-    @Autowired
-    private RabbitTemplate rabbitTemplate;
 
-    public void sendTestLog() {
-        rabbitTemplate.convertAndSend(
-                RabbitConfig.EVENT_EXCHANGE, // 发到哪个 exchange
-                RabbitConfig.EVENT_LOG_KEY,  // 用哪个 routingKey
-                "hello rabbitmq"             // 消息内容
-        );
+    private final RabbitTemplate rabbitTemplate;
+     //发送操作日志事件
+     public void sendOperationLog(OperationLogEntity entity) {
+         rabbitTemplate.convertAndSend(
+                 RabbitConfig.EVENT_EXCHANGE,
+                 RabbitConfig.EVENT_LOG_KEY,
+                 entity
+         );
     }
 }
