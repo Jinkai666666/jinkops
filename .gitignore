@@ -22,6 +22,7 @@ logs/
 ### Spring Boot ###
 application-*.yml
 application-*.properties
+application.yml
 
 ### OS files ###
 .DS_Store
