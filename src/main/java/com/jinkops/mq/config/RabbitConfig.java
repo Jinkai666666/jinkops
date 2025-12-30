@@ -1,4 +1,4 @@
-package com.jinkops.config;
+package com.jinkops.mq.config;
 
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.core.*;
@@ -9,6 +9,30 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitConfig {
+    // 死信 Exchange
+    public static final String DLX_EXCHANGE = "ops.event.dlx.exchange";
+    // 死信 Queue
+    public static final String DLQ_QUEUE = "ops.event.dlq.queue";
+    // 死信 routingKey
+    public static final String DLQ_KEY = "ops.event.dlq";
+    @Bean
+    public DirectExchange dlxExchange() {
+        return new DirectExchange(DLX_EXCHANGE, true, false);
+    }
+
+    @Bean
+    public Queue dlqQueue() {
+        return QueueBuilder.durable(DLQ_QUEUE).build();
+    }
+
+    @Bean
+    public Binding dlqBinding() {
+        return BindingBuilder
+                .bind(dlqQueue())
+                .to(dlxExchange())
+                .with(DLQ_KEY);
+    }
+
 
     // 入口
     public static final String EVENT_EXCHANGE = "ops.event.exchange";
@@ -26,9 +50,12 @@ public class RabbitConfig {
     }
 
     @Bean
+    //隊列
     public Queue eventLogQueue() {
-        // 普通持久化队列
-        return QueueBuilder.durable(EVENT_LOG_QUEUE).build();
+        return QueueBuilder.durable(EVENT_LOG_QUEUE)
+                .withArgument("x-dead-letter-exchange", DLX_EXCHANGE)
+                .withArgument("x-dead-letter-routing-key", DLQ_KEY)
+                .build();
     }
     @Bean
     public AmqpAdmin amqpAdmin(ConnectionFactory connectionFactory) {

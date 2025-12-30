@@ -19,6 +19,8 @@
     password: jinkops123
     virtual-host: /
     connection-timeout: 5000
+    publisher-confirm-type: correlated
+    publisher-returns: true
 
   main:
     lazy-initialization: false

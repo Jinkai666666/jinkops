@@ -1,4 +1,4 @@
-package com.jinkops.security;
+package com.jinkops.web.security;
 
 import com.jinkops.service.CustomUserDetailsService;
 import com.jinkops.util.JwtUtil;
