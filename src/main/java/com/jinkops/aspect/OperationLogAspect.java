@@ -1,7 +1,7 @@
 package com.jinkops.aspect;
 
 import com.jinkops.annotation.OperationLog;
-import com.jinkops.service.EventLogService;
+import com.jinkops.mq.producer.EventLogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;

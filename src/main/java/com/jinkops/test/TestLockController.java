@@ -1,5 +1,5 @@
 package com.jinkops.test;
-import com.jinkops.service.EventLogService;
+import com.jinkops.mq.producer.EventLogService;
 import com.jinkops.lock.RedisLock;
 import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.GetMapping;

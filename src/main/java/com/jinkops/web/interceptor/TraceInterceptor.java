@@ -1,4 +1,4 @@
-package com.jinkops.interceptor;
+package com.jinkops.web.interceptor;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

@@ -15,7 +15,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import com.jinkops.security.JwtAuthenticationFilter;
+import com.jinkops.web.security.JwtAuthenticationFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 
@@ -51,6 +51,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/test/**").permitAll()
                         .requestMatchers("/test/redisson/*").permitAll()
                         .requestMatchers("/test/mq").permitAll()
+                        .requestMatchers("/api/mq/operation-log").permitAll()
                         .requestMatchers("/api/lock/user/**").permitAll()// 放行登錄註冊
 
                         .anyRequest().authenticated()            // 其餘都需要登錄
