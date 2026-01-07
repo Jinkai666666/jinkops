@@ -1,6 +1,6 @@
 package com.jinkops.quartz.config;
 
-import com.jinkops.quartz.job.DemoQuartzJob;
+import com.jinkops.quartz.job.ScanFailedOperationLogJob;
 import org.quartz.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,24 +8,31 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class QuartzConfig {
 
+    /**
+     * JobDetail：定义要跑哪个 Job
+     */
     @Bean
-    public JobDetail demoJobDetail() {
-        return JobBuilder.newJob(DemoQuartzJob.class)
-                .withIdentity("demoJob")
+    public JobDetail scanFailedOperationLogJobDetail() {
+        return JobBuilder.newJob(ScanFailedOperationLogJob.class)
+                .withIdentity("scanFailedOperationLogJob")
                 .storeDurably()
                 .build();
     }
 
+    /**
+     * Trigger：定义多久跑一次
+     */
     @Bean
-    public Trigger demoJobTrigger() {
+    public Trigger scanFailedOperationLogJobTrigger() {
+
         SimpleScheduleBuilder schedule =
                 SimpleScheduleBuilder.simpleSchedule()
-                        .withIntervalInSeconds(5)
+                        .withIntervalInMinutes(1)
                         .repeatForever();
 
         return TriggerBuilder.newTrigger()
-                .forJob(demoJobDetail())
-                .withIdentity("demoTrigger")
+                .forJob(scanFailedOperationLogJobDetail())
+                .withIdentity("scanFailedOperationLogTrigger")
                 .withSchedule(schedule)
                 .build();
     }
