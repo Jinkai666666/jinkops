@@ -24,8 +24,8 @@ public class RabbitMqController {
         if (entity.getTraceId() == null || entity.getTraceId().isBlank()) {
             entity.setTraceId(UUID.randomUUID().toString());
         }
-        if (entity.getTimestamp() == null) {
-            entity.setTimestamp(LocalDateTime.now());
+        if (entity.getCreateTime() == null) {
+            entity.setCreateTime(LocalDateTime.now());
         }
 
         eventLogService.sendOperationLog(entity);

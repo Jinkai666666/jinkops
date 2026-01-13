@@ -2,10 +2,12 @@ package com.jinkops.config;
 
 import com.jinkops.service.CustomUserDetailsService;
 import com.jinkops.service.UserService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -23,23 +25,29 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration //配置類
 @EnableWebSecurity
 @ComponentScan(basePackages = "com.jinkops")
+@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final CustomUserDetailsService customUserDetailsService;
 
     private final JwtAuthenticationFilter jwtFilter;
-    // 構造注入
+    
+    @Value("${app.security.enabled:true}")
+    private boolean securityEnabled;
+// 構造注入
 
-    public SecurityConfig(CustomUserDetailsService customUserDetailsService,
-                          JwtAuthenticationFilter jwtFilter) {
-        this.customUserDetailsService = customUserDetailsService;
-        this.jwtFilter = jwtFilter;
-    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http.csrf(csrf -> csrf.disable());
+        if (!securityEnabled) {
+            http.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                    .formLogin(form -> form.disable())
+                    .httpBasic(basic -> basic.disable());
+            return http.build();
+        }
+
         http
-                .csrf(csrf -> csrf.disable()) // 關閉 CSRF
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**",
                                 "/doc.html",
@@ -47,21 +55,23 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/v3/api-docs/**",
                                 "/api-docs/**",
-                                "/webjars/**").permitAll()
+                                 "/webjars/**").permitAll()
                         .requestMatchers("/api/test/**").permitAll()
                         .requestMatchers("/test/redisson/*").permitAll()
                         .requestMatchers("/test/mq").permitAll()
                         .requestMatchers("/api/mq/operation-log").permitAll()
-                        .requestMatchers("/api/lock/user/**").permitAll()// 放行登錄註冊
+                        .requestMatchers("/api/lock/user/**").permitAll()
+                        .requestMatchers("/api/logs/page").permitAll()// ??????????????????
 
-                        .anyRequest().authenticated()            // 其餘都需要登錄
+                        .anyRequest().authenticated()            // ?????????????????????
                 )
-                .formLogin(form -> form.disable())  // 禁用默認登錄頁
-                .httpBasic(basic -> basic.disable()); // 禁用彈窗登錄
+                .formLogin(form -> form.disable())  // ?????????????????????
+                .httpBasic(basic -> basic.disable()); // ??????????????????
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {

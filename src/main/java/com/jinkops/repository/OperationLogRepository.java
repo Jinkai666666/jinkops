@@ -20,7 +20,7 @@ public interface OperationLogRepository extends JpaRepository<OperationLogEntity
             "SELECT l FROM OperationLogEntity l " +
                     "WHERE LOWER(l.username) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
                     "   OR LOWER(l.operation) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-                    "ORDER BY l.timestamp DESC"
+                    "ORDER BY l.createTime DESC"
     )
     Page<OperationLogEntity> searchLogs(
             @Param("keyword") String keyword,
@@ -30,10 +30,10 @@ public interface OperationLogRepository extends JpaRepository<OperationLogEntity
     // 時間區間查詢
     @Query("""
         SELECT l FROM OperationLogEntity l
-        WHERE l.timestamp BETWEEN :start AND :end
-        ORDER BY l.timestamp DESC
+        WHERE l.createTime BETWEEN :start AND :end
+        ORDER BY l.createTime DESC
         """)
-    Page<OperationLogEntity> findByTimestampRange(
+    Page<OperationLogEntity> findByCreateTimeRange(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end,
             Pageable pageable
@@ -42,11 +42,30 @@ public interface OperationLogRepository extends JpaRepository<OperationLogEntity
     // Quartz 專用：掃描失敗且超過指定時間的操作日誌（只讀）
     @Query(
             "SELECT l FROM OperationLogEntity l " +
-                    "WHERE l.timestamp < :threshold " +
-                    "ORDER BY l.timestamp ASC"
+                    "WHERE l.createTime < :threshold " +
+                    "ORDER BY l.createTime ASC"
     )
     List<OperationLogEntity> findBefore(
             @Param("threshold") LocalDateTime threshold
     );
+
+    // ES 掛掉時的 DB 兜底搜尋（非分頁）
+    @Query("""
+    SELECT l FROM OperationLogEntity l
+    WHERE (:keyword IS NULL
+           OR LOWER(l.username) LIKE LOWER(CONCAT('%', :keyword, '%'))
+           OR LOWER(l.operation) LIKE LOWER(CONCAT('%', :keyword, '%')))
+      AND (:start IS NULL OR l.createTime >= :start)
+      AND (:end IS NULL OR l.createTime <= :end)
+    ORDER BY l.createTime DESC
+""")
+    List<OperationLogEntity> searchForEsFallback(
+            @Param("keyword") String keyword,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
+
+    // 全空時兜底最近 100 筆
+    List<OperationLogEntity> findTop100ByOrderByCreateTimeDesc();
 
 }

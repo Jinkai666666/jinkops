@@ -53,7 +53,7 @@ public class OperationLogEntity {
     @Column(nullable = false)
     private Long elapsedTime;
 
-    // 記錄時間
-    @Column(nullable = false)
-    private LocalDateTime timestamp = LocalDateTime.now();
+    // 記錄時間（對應 DB 欄位 create_time）
+    @Column(name = "create_time", nullable = false)
+    private LocalDateTime createTime;
 }

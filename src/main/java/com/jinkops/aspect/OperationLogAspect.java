@@ -91,7 +91,7 @@ public class OperationLogAspect {
             entity.setArgs(args);
             entity.setDescription(desc);
             entity.setElapsedTime(time);  // <<< 對應 elapsedTime 字段
-            entity.setTimestamp(LocalDateTime.now()); // <<< 明確寫入
+            entity.setCreateTime(LocalDateTime.now()); // <<< 明確寫入
             repository.save(entity);
             // 返回原方法的執行結果
             eventLogService.sendOperationLog(entity);
@@ -115,7 +115,7 @@ public class OperationLogAspect {
             entity.setArgs(args);
             entity.setDescription(desc + " (異常)");
             entity.setElapsedTime(time);
-            entity.setTimestamp(LocalDateTime.now());
+            entity.setCreateTime(LocalDateTime.now());
 
             repository.save(entity);
 

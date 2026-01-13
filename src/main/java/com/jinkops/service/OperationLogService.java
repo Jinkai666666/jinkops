@@ -2,20 +2,20 @@ package com.jinkops.service;
 
 import com.jinkops.entity.log.OperationLogEntity;
 import com.jinkops.repository.OperationLogRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
 
 // 操作日誌服務類
 @Service
+@RequiredArgsConstructor
 public class OperationLogService {
 
     private final OperationLogRepository operationLogRepository;
-
-    public OperationLogService(OperationLogRepository operationLogRepository){
-        this.operationLogRepository = operationLogRepository;
-    }
 
     // 分頁獲取全部日誌（按時間倒序）
     public Page<OperationLogEntity> getLogs(Pageable pageable){
@@ -23,7 +23,7 @@ public class OperationLogService {
         PageRequest sorted = PageRequest.of(
                 pageable.getPageNumber(),
                 pageable.getPageSize(),
-                Sort.by(Sort.Direction.DESC, "timestamp")
+                Sort.by(Sort.Direction.DESC, "createTime")
         );
 
         return operationLogRepository.findAll(sorted);
@@ -35,7 +35,7 @@ public class OperationLogService {
         PageRequest sorted = PageRequest.of(
                 pageable.getPageNumber(),
                 pageable.getPageSize(),
-                Sort.by(Sort.Direction.DESC, "timestamp")
+                Sort.by(Sort.Direction.DESC, "createTime")
         );
 
         if (keyword == null || keyword.trim().isEmpty()) {
@@ -51,10 +51,34 @@ public class OperationLogService {
         PageRequest sorted = PageRequest.of(
                 pageable.getPageNumber(),
                 pageable.getPageSize(),
-                Sort.by(Sort.Direction.DESC, "timestamp")
+                Sort.by(Sort.Direction.DESC, "createTime")
         );
 
-        return operationLogRepository.findByTimestampRange(start, end, sorted);
+        return operationLogRepository.findByCreateTimeRange(start, end, sorted);
+    }
+
+
+    /**
+     * ES 掛掉時的 DB 兜底搜尋
+     */
+    public List<OperationLogEntity> search(String keyword,
+                                           Long startTime,
+                                           Long endTime) {
+
+        LocalDateTime start = startTime == null
+                ? null
+                : LocalDateTime.ofEpochSecond(startTime / 1000, 0, ZoneOffset.UTC);
+
+        LocalDateTime end = endTime == null
+                ? null
+                : LocalDateTime.ofEpochSecond(endTime / 1000, 0, ZoneOffset.UTC);
+
+        // 全空 → 最近 100 筆
+        if ((keyword == null || keyword.isBlank()) && start == null && end == null) {
+            return operationLogRepository.findTop100ByOrderByCreateTimeDesc();
+        }
+
+        return operationLogRepository.searchForEsFallback(keyword, start, end);
     }
 
 }

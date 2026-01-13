@@ -1,9 +1,12 @@
 package com.jinkops.controller;
 
 import com.jinkops.entity.log.OperationLogEntity;
+import com.jinkops.service.es.OperationLogEsService;
 import com.jinkops.service.OperationLogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
@@ -11,18 +14,18 @@ import com.jinkops.vo.LogQueryRequest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import java.time.LocalDateTime;
-
+import java.util.List;
 // 操作日誌控制器
+@Slf4j
 @Tag(name = "操作日誌接口", description = "提供日誌查詢與搜索功能")
 @RestController
 @RequestMapping("/api/logs")
+@RequiredArgsConstructor
 public class OperationLogController {
 
     private final OperationLogService operationLogService;
+    private final OperationLogEsService  operationLogEsService;
 
-    public OperationLogController(OperationLogService operationLogService) {
-        this.operationLogService = operationLogService;
-    }
 
     // 分頁查詢操作日誌
     @Operation(summary = "分頁查詢操作日誌（按時間倒序）")
@@ -47,7 +50,7 @@ public class OperationLogController {
         Pageable pageable = PageRequest.of(
                 req.getPage(),
                 req.getSize(),
-                Sort.by(Sort.Direction.DESC, "timestamp")
+                Sort.by(Sort.Direction.DESC, "createTime")
         );
 
         // keyword 優先
@@ -72,6 +75,42 @@ public class OperationLogController {
 
         // 默認查全部
         return operationLogService.getLogs(pageable);
+    }
+
+    /**
+     * 日誌搜尋
+     * - 先查 ES
+     * - ES 掛了 / 例外 → 查 MySQL
+     */
+    @GetMapping("/search/es")
+    public List<OperationLogEntity> search(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long startTime,
+            @RequestParam(required = false) Long endTime
+    ) {
+
+        try {
+            List<OperationLogEntity> esResult =
+                    operationLogEsService.search(keyword, startTime, endTime);
+
+            //ES 没数据 → 兜底 DB
+            if (esResult == null || esResult.isEmpty()) {
+                log.warn("[HIT DB] search, keyword={}, start={}, end={}",
+                        keyword, startTime, endTime);
+                return operationLogService.search(keyword, startTime, endTime);
+            }
+
+            log.warn("[HIT ES] search, keyword={}, start={}, end={}",
+                    keyword, startTime, endTime);
+            return esResult;
+
+        } catch (Exception e) {
+            // ES 异常 → 兜底 DB
+            log.warn("[HIT DB] search, keyword={}, start={}, end={}",
+                    keyword, startTime, endTime);
+            return operationLogService.search(keyword, startTime, endTime);
+
+        }
     }
 
 
