@@ -8,7 +8,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.util.UUID;
 
-// 請求攔截器：請求生成 traceId 放入 MDC
+// 只負責補 traceId，給全鏈路日誌用
 @Component
 public class TraceInterceptor implements HandlerInterceptor {
 
@@ -21,6 +21,6 @@ public class TraceInterceptor implements HandlerInterceptor {
 
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
-        MDC.clear(); // 清理線程複用
+        MDC.clear(); // 清理執行緒複用
     }
 }

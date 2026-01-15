@@ -1,7 +1,11 @@
 package com.jinkops.quartz.config;
 
 import com.jinkops.quartz.job.ScanFailedOperationLogJob;
-import org.quartz.*;
+import org.quartz.JobDetail;
+import org.quartz.JobBuilder;
+import org.quartz.SimpleScheduleBuilder;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -9,7 +13,7 @@ import org.springframework.context.annotation.Configuration;
 public class QuartzConfig {
 
     /**
-     * JobDetail：定义要跑哪个 Job
+     * JobDetail：定義要跑哪個 Job
      */
     @Bean
     public JobDetail scanFailedOperationLogJobDetail() {
@@ -20,7 +24,7 @@ public class QuartzConfig {
     }
 
     /**
-     * Trigger：定义多久跑一次
+     * Trigger：定義多久跑一次
      */
     @Bean
     public Trigger scanFailedOperationLogJobTrigger() {

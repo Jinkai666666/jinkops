@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
+
 @Component
 @Slf4j
 public class OperationLogListener {
@@ -25,31 +26,24 @@ public class OperationLogListener {
 
         long tag = message.getMessageProperties().getDeliveryTag();
 
-        // 从 header 里拿重试次数
         Integer retryCount = (Integer) message
                 .getMessageProperties()
                 .getHeaders()
                 .getOrDefault("x-retry-count", 0);
 
         try {
-            // ===== 业务处理 =====
-            log.info("MQ 收到操作日志：{}", entity);
-
-            //测试用：先故意抛异常
-            // int x = 1 / 0;
+            // 這裡只做落庫/審計後續，不影響主流程
 
             // 成功才 ACK
             channel.basicAck(tag, false);
+            log.info("[MQ] consume success retry={} dlq=false", retryCount);
 
         } catch (Exception e) {
 
             if (retryCount >= MAX_RETRY) {
-                log.error(
-                        "超过最大重试次数，进入死信队列，retryCount={}, entity={}",
-                        retryCount, entity, e
-                );
-
-                // requeue=false → 触发 DLQ
+                // 達上限就丟 DLQ
+                log.error("[MQ] consume failed retry={} dlq=true reason={}", retryCount, e.getMessage(), e);
+                // requeue=false → 觸發 DLQ
                 channel.basicNack(tag, false, false);
 
             } else {
@@ -60,12 +54,9 @@ public class OperationLogListener {
                         .getHeaders()
                         .put("x-retry-count", nextRetry);
 
-                log.warn(
-                        "消费失败，准备第 {} 次重试，entity={}",
-                        nextRetry, entity, e
-                );
-
-                // 继续重试
+                // 失敗先重試，不阻塞主流程
+                log.error("[MQ] consume failed retry={} dlq=false reason={}", nextRetry, e.getMessage(), e);
+                // 繼續重試
                 channel.basicNack(tag, false, true);
             }
         }

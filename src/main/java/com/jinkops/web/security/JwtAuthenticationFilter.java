@@ -33,9 +33,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String uri = request.getRequestURI();
 
-        // 白名單：這些接口不需要走 JWT 校驗
-        if (uri.startsWith("/api/test/")
-                || uri.startsWith("/api/auth/")
+        // 白名單：這些介面不需要走 JWT 校驗
+        if (uri.startsWith("/api/auth/")
                 || uri.startsWith("/doc.html")
                 || uri.startsWith("/swagger")
                 || uri.startsWith("/v3/api-docs")
@@ -45,7 +44,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-
+        // 只攔需要登入的請求
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -61,6 +60,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             var userDetails = userDetailsService.loadUserByUsername(username);
 
             if (jwtUtil.validateToken(token, userDetails)) {
+                // 驗證通過才寫入 SecurityContext
                 UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(
                                 userDetails, null, userDetails.getAuthorities()

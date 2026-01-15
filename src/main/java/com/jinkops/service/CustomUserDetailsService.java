@@ -4,7 +4,6 @@ import com.jinkops.entity.user.Permission;
 import com.jinkops.entity.user.Role;
 import com.jinkops.entity.user.User;
 import com.jinkops.repository.UserRepository;
-
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -19,20 +18,21 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
 
-    // 構造注入，避免循環依賴
+    // 建構注入，避免循環依賴
     public CustomUserDetailsService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
     @Override
+    // 這裡把角色/權限攤平給 Security 用
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
         User user = userRepository.findByUsername(username);
         if (user == null) {
-            throw new UsernameNotFoundException("賬號不存在");
+            throw new UsernameNotFoundException("帳號不存在");
         }
 
-        // 角色及權限全部展開 給予Security
+        // 角色及權限全部展開給予 Security
         Set<SimpleGrantedAuthority> authorities = new HashSet<>();
 
         for (Role role : user.getRoles()) {
@@ -52,5 +52,4 @@ public class CustomUserDetailsService implements UserDetailsService {
                 authorities
         );
     }
-
 }

@@ -4,53 +4,52 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
 
-//JWT 工具類：生成與解析 Token
-
+// JWT 工具類：生成與解析 Token
 @Component
 public class JwtUtil {
 
-    // 建議生產環境放配置文件或環境變量
-    private  final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    // 建議生產環境放設定檔或環境變數
+    private final Key secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
-    // Token 有效期  24 小時
-    private  final long EXPIRATION_TIME = 24 * 60 * 60 * 1000;
+    // Token 有效期 24 小時
+    private final long expirationTime = 24 * 60 * 60 * 1000;
 
     // 生成 Token
-    public  String generateToken(String username) {
+    public String generateToken(String username) {
         Date now = new Date();
-        Date expiry = new Date(now.getTime() + EXPIRATION_TIME);
+        Date expiry = new Date(now.getTime() + expirationTime);
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(now)
                 .setExpiration(expiry)
-                .signWith(SECRET_KEY)
+                .signWith(secretKey)
                 .compact();
     }
 
     // 解析 Token
-    public  Claims parseToken(String token) {
+    public Claims parseToken(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(SECRET_KEY)
+                .setSigningKey(secretKey)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
     }
+
     // 檢查是否過期
-    public  boolean isTokenExpired(String token) {
+    public boolean isTokenExpired(String token) {
         try {
             return parseToken(token).getExpiration().before(new Date());
         } catch (Exception e) {
             return true;
         }
     }
-    //JwtAuthenticationFilter 需要的方法：提取用戶名
+
+    // JwtAuthenticationFilter 需要的方法：提取用戶名
     public String extractUsername(String token) {
         try {
             return parseToken(token).getSubject();

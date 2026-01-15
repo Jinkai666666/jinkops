@@ -1,6 +1,5 @@
 package com.jinkops.service;
-import org.redisson.api.RLock;
-import org.redisson.api.RedissonClient;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jinkops.cache.key.UserKeys;
 import com.jinkops.cache.service.CacheService;
@@ -9,6 +8,8 @@ import com.jinkops.exception.BizException;
 import com.jinkops.exception.ErrorCode;
 import com.jinkops.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -18,7 +19,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -38,9 +38,9 @@ public class UserService {
     @Autowired
     private RedissonClient redissonClient;
 
-    ////隨機 TTL 方法
+    // 隨機 TTL，避免大量快取同時過期
     private int randomTtl() {
-        return 3600 + (int)(Math.random() * 300); // 隨機 3600~3900
+        return 3600 + (int) (Math.random() * 300); // 隨機 3600~3900
     }
 
     // 注入 repository
@@ -48,235 +48,255 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    // 所有用戶
+    // 後台列表入口，直接走資料庫
     public List<User> getAllUsers() {
-        return userRepository.findAll();
-    }
-
-    // 用戶名查
-    public User findByUsername(String username) {
-        String key = UserKeys.userInfo(username);
-        String json = cacheService.get(key);
-        if (json == null) {
-            log.info("user cache miss, key={}", key);
-        } else {
-            log.info("user cache hit, key={}", key);
-        }
-        // 空值緩存命中
-        if ("null".equals(json)) {
-            return null;
-        }
-
-        // 命中正常緩存
-        if (json != null) {
-            try {
-                return objectMapper.readValue(json, User.class);
-            } catch (Exception ignored) {}
-        }
-
-        //  緩存沒有 查數據庫
-        User user = userRepository.findByUsername(username);
-
-        //  數據庫沒查到  寫空值緩存（防穿透）
-        if (user == null) {
-            cacheService.set(key, "null", 30);
-            return null;
-        }
-
-        //  查到了 寫正常緩存
+        long start = System.currentTimeMillis();
+        log.info("[SERVICE] getAllUsers start keyParams=none");
         try {
-            cacheService.set(key, objectMapper.writeValueAsString(user), randomTtl());
-        } catch (Exception ignored) {}
-
-        ////测试用
-        System.out.println(passwordEncoder.encode("你的密碼"));
-
-        return user;
-    }
-
-    //  新增用戶
-    public User addUser(User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
-    }
-    //  刪除用戶
-    public void deleteUser(String username) {
-        User user = userRepository.findByUsername(username);
-
-        if (user == null) {
-            throw new BizException(ErrorCode.USER_NOT_FOUND, "用戶不存在：" + username);
+            List<User> result = userRepository.findAll();
+            long cost = System.currentTimeMillis() - start;
+            log.info("[SERVICE] getAllUsers success cost={}ms keyResult=count={}", cost, result.size());
+            return result;
+        } catch (Exception e) {
+            log.error("[SERVICE] getAllUsers failed reason={}", e.getMessage(), e);
+            throw e;
         }
-        // 刪除分頁緩存
-        cacheService.deleteByPrefix("user:list:page:");
-        log.info("page cache cleared after delete");
-
-
-        userRepository.delete(user);
     }
 
-    //根據用戶名找查
-    public Optional<User>getById(Long id) {
-        return  userRepository.findById(id);
+    // 查用戶資訊，走快取避免打穿 DB
+    public User findByUsername(String username) {
+        long start = System.currentTimeMillis();
+        log.info("[SERVICE] findByUsername start keyParams=username={}", username);
+        try {
+            String key = UserKeys.userInfo(username);
+            String json = cacheService.get(key);
+            if ("null".equals(json)) {
+                // 空值快取命中，直接回
+                long cost = System.currentTimeMillis() - start;
+                log.info("[SERVICE] findByUsername success cost={}ms keyResult=not_found", cost);
+                return null;
+            }
+
+            if (json != null) {
+                try {
+                    // 快取命中直接反序列化
+                    User cached = objectMapper.readValue(json, User.class);
+                    long cost = System.currentTimeMillis() - start;
+                    log.info("[SERVICE] findByUsername success cost={}ms keyResult=from_cache", cost);
+                    return cached;
+                } catch (Exception ignored) {
+                }
+            }
+
+            // 快取沒有就回 DB
+            User user = userRepository.findByUsername(username);
+            if (user == null) {
+                // 空值快取防穿透
+                cacheService.set(key, "null", 30);
+                long cost = System.currentTimeMillis() - start;
+                log.info("[SERVICE] findByUsername success cost={}ms keyResult=not_found", cost);
+                return null;
+            }
+
+            try {
+                // 有結果就補快取
+                cacheService.set(key, objectMapper.writeValueAsString(user), randomTtl());
+            } catch (Exception ignored) {
+            }
+            long cost = System.currentTimeMillis() - start;
+            log.info("[SERVICE] findByUsername success cost={}ms keyResult=found", cost);
+            return user;
+        } catch (Exception e) {
+            log.error("[SERVICE] findByUsername failed reason={}", e.getMessage(), e);
+            throw e;
+        }
     }
 
-    //查緩存
+    // 新增用戶時做密碼加密
+    public User addUser(User user) {
+        long start = System.currentTimeMillis();
+        log.info("[SERVICE] addUser start keyParams=username={}", user.getUsername());
+        try {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+            User saved = userRepository.save(user);
+            long cost = System.currentTimeMillis() - start;
+            log.info("[SERVICE] addUser success cost={}ms keyResult=userId={}", cost, saved.getId());
+            return saved;
+        } catch (Exception e) {
+            log.error("[SERVICE] addUser failed reason={}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    // 刪除後順便清理分頁快取
+    public void deleteUser(String username) {
+        long start = System.currentTimeMillis();
+        log.info("[SERVICE] deleteUser start keyParams=username={}", username);
+        try {
+            User user = userRepository.findByUsername(username);
+            if (user == null) {
+                // 找不到就直接丟業務錯
+                throw new BizException(ErrorCode.USER_NOT_FOUND, "用戶不存在：" + username);
+            }
+            cacheService.deleteByPrefix("user:list:page:");
+            userRepository.delete(user);
+            long cost = System.currentTimeMillis() - start;
+            log.info("[SERVICE] deleteUser success cost={}ms keyResult=ok", cost);
+        } catch (Exception e) {
+            log.error("[SERVICE] deleteUser failed reason={}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    // 內部方法，給授權/關聯關係查詢用
+    public Optional<User> getById(Long id) {
+        long start = System.currentTimeMillis();
+        log.info("[SERVICE] getById start keyParams=id={}", id);
+        try {
+            Optional<User> result = userRepository.findById(id);
+            long cost = System.currentTimeMillis() - start;
+            log.info("[SERVICE] getById success cost={}ms keyResult=found={}", cost, result.isPresent());
+            return result;
+        } catch (Exception e) {
+            log.error("[SERVICE] getById failed reason={}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    // 只讀快取，不做 DB 回查
     public User getUserFromCache(String username) {
-       //規範化 key
         String key = UserKeys.userInfo(username);
-        //Redis 拿值
         String json = cacheService.get(key);
         if (json == null) {
             return null;
         }
         if ("null".equals(json)) {
-            return null; // 空值緩存
+            return null; // 空值快取
         }
-        try{
-            return objectMapper.readValue(json,User.class);
-        }catch (Exception e){
-            return null ;
+        try {
+            return objectMapper.readValue(json, User.class);
+        } catch (Exception e) {
+            return null;
         }
     }
 
-    //置入緩存
+    // 統一快取寫入入口，方便控 TTL
     public void setUserCache(String username, User user) {
         try {
             String key = UserKeys.userInfo(username);
             String json = objectMapper.writeValueAsString(user);
-            cacheService.set(key,json,randomTtl());
-        }catch (Exception ignored){}
-    }
-
-    //更新用戶
-    public User updateUser(User user) {
-        //是否存在
-        User dbUser = userRepository.findByUsername(user.getUsername());
-        if (dbUser == null) {
-            throw  new BizException(ErrorCode.USER_NOT_FOUND, "用戶不存在：" + user.getUsername());
-
+            cacheService.set(key, json, randomTtl());
+        } catch (Exception ignored) {
         }
-        dbUser.setEmail(user.getEmail());
-        dbUser.setPassword(passwordEncoder.encode(user.getPassword()));
-
-        // 保存 DB
-        User updated = userRepository.save(dbUser);
-
-
-        // 刪除用戶緩存
-        String key = UserKeys.userInfo(updated.getUsername());
-        cacheService.delete(key);
-        log.info("cache delete after update, key={}", key);
-
-        // 刪除分頁緩存
-        cacheService.deleteByPrefix("user:list:page:");
-        log.info("page cache cleared after update");
-
-
-        return updated;
-
     }
-       // 分頁查詢用戶緩存
-       public Page<User> pageUsers(int page, int size) {
 
-           String key = UserKeys.userListPage(page, size);
-           //整頁的page size
-           String json = cacheService.get(key);
+    // 更新後要清理對應快取與分頁快取
+    public User updateUser(User user) {
+        long start = System.currentTimeMillis();
+        log.info("[SERVICE] updateUser start keyParams=username={}", user.getUsername());
+        try {
+            User dbUser = userRepository.findByUsername(user.getUsername());
+            if (dbUser == null) {
+                // 更新前先確定資料存在
+                throw new BizException(ErrorCode.USER_NOT_FOUND, "用戶不存在：" + user.getUsername());
+            }
+            dbUser.setEmail(user.getEmail());
+            dbUser.setPassword(passwordEncoder.encode(user.getPassword()));
 
-           // 有緩存直接返回
-           if (json != null) {
-               //已存在並日志返回
-               log.info("page cache hit, key={}", key);
-               try {
-                   List<User> list = objectMapper.readValue(
-                           json,// Redis 返回的 JSON 字符串
-                           objectMapper.getTypeFactory().constructCollectionType(List.class, User.class)
-                   );
+            User updated = userRepository.save(dbUser);
 
-                   //List 包成 Page
-                   return new PageImpl<>(list);
-               } catch (Exception ignored) {
-               }
-           }
+            String key = UserKeys.userInfo(updated.getUsername());
+            cacheService.delete(key);
+            cacheService.deleteByPrefix("user:list:page:");
 
-           //// 無緩存  查數據庫
+            long cost = System.currentTimeMillis() - start;
+            log.info("[SERVICE] updateUser success cost={}ms keyResult=userId={}", cost, updated.getId());
+            return updated;
+        } catch (Exception e) {
+            log.error("[SERVICE] updateUser failed reason={}", e.getMessage(), e);
+            throw e;
+        }
+    }
 
-           //page 頁，大小 size 的分頁
-           PageRequest pr = PageRequest.of(page - 1, size);
-           //取數據庫當頁數據
-           Page<User> pageData = userRepository.findAll(pr);
+    // 分頁列表走快取，降低列表壓力
+    public Page<User> pageUsers(int page, int size) {
+        long start = System.currentTimeMillis();
+        log.info("[SERVICE] pageUsers start keyParams=page={},size={}", page, size);
+        try {
+            String key = UserKeys.userListPage(page, size);
+            String json = cacheService.get(key);
 
-           // 緩存 list
-           try {
-               //本頁序列 存入redis
-               String listJson = objectMapper.writeValueAsString(pageData.getContent());
-               cacheService.set(key, listJson, randomTtl());
-               log.info("page cache write, key={}", key);
-           } catch (Exception ignored) {}
+            if (json != null) {
+                try {
+                    // 快取命中直接包成 Page
+                    List<User> list = objectMapper.readValue(
+                            json,
+                            objectMapper.getTypeFactory().constructCollectionType(List.class, User.class)
+                    );
+                    Page<User> result = new PageImpl<>(list);
+                    long cost = System.currentTimeMillis() - start;
+                    log.info("[SERVICE] pageUsers success cost={}ms keyResult=total={}",
+                            cost, result.getTotalElements());
+                    return result;
+                } catch (Exception ignored) {
+                }
+            }
 
+            PageRequest pr = PageRequest.of(page - 1, size);
+            Page<User> pageData = userRepository.findAll(pr);
 
-           //返回分頁完整數據
-           return pageData;
-       }
+            try {
+                // 只快取列表內容
+                String listJson = objectMapper.writeValueAsString(pageData.getContent());
+                cacheService.set(key, listJson, randomTtl());
+            } catch (Exception ignored) {
+            }
 
+            long cost = System.currentTimeMillis() - start;
+            log.info("[SERVICE] pageUsers success cost={}ms keyResult=total={}",
+                    cost, pageData.getTotalElements());
+            return pageData;
+        } catch (Exception e) {
+            log.error("[SERVICE] pageUsers failed reason={}", e.getMessage(), e);
+            throw e;
+        }
+    }
 
-    // 新增用户（带分布式锁 + 重复校验 + 缓存清理）
+    // 這裡用分散式鎖，避免併發建立同名用戶
     public User createUser(User user) {
-
+        long start = System.currentTimeMillis();
+        log.info("[SERVICE] createUser start keyParams=username={}", user.getUsername());
         String username = user.getUsername();
         String lockKey = "lock:user:create:" + username;
 
         RLock lock = redissonClient.getLock(lockKey);
 
         try {
-            lock.lock(); // 不给 TTL，Watchdog 生效
+            // 不給 TTL，交給 Watchdog
+            lock.lock();
 
-            // 判断是否重复
             User exist = userRepository.findByUsername(username);
             if (exist != null) {
-                throw new BizException(ErrorCode.USER_EXIST, "用户名已存在");
+                // 同名就直接拒絕
+                throw new BizException(ErrorCode.USER_EXIST, "用戶名已存在");
             }
 
             user.setPassword(passwordEncoder.encode(user.getPassword()));
             User saved = userRepository.save(user);
 
             cacheService.deleteByPrefix("user:list:page:");
-            log.info("page cache cleared after user create");
-
+            long cost = System.currentTimeMillis() - start;
+            log.info("[SERVICE] createUser success cost={}ms keyResult=userId={}", cost, saved.getId());
             return saved;
 
+        } catch (Exception e) {
+            log.error("[SERVICE] createUser failed reason={}", e.getMessage(), e);
+            throw e;
         } finally {
             if (lock.isHeldByCurrentThread()) {
+                // 只解自己持有的鎖
                 lock.unlock();
             }
         }
     }
-
-
-    public void submitOnce(Long userId, String bizKey) {
-        String lockKey = "lock:submit:" + userId + ":" + bizKey;
-        RLock lock = redissonClient.getLock(lockKey);
-
-        boolean locked;
-        try {
-            locked = lock.tryLock(0, 5, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            throw new BizException(ErrorCode.REPEAT_SUBMIT);
-        }
-
-        if (!locked) {
-            throw new BizException(ErrorCode.REPEAT_SUBMIT);
-        }
-
-        try {
-            // 模拟业务
-            log.info("submit once success userId={}", userId);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-
-
-
-
 }

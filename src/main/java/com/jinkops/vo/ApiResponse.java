@@ -4,15 +4,15 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-//統一接口返回格式，包含狀態碼、提示信息、數據
+// 統一介面返回格式，包含狀態碼、提示訊息、資料
 @Data
-@NoArgsConstructor//自動生成空構造
-@AllArgsConstructor//自動生成帶全部參
+@NoArgsConstructor // 自動生成空建構
+@AllArgsConstructor // 自動生成帶全部參數
 public class ApiResponse<T> {
 
     private int code;     // 狀態碼
-    private String message;   // 提示信息
-    private T data;       // 返回數據
+    private String message;   // 提示訊息
+    private T data;       // 返回資料
 
     // 成功時返回
     public static <T> ApiResponse<T> success(T data) {
@@ -30,5 +30,4 @@ public class ApiResponse<T> {
     public static <T> ApiResponse<T> fail(com.jinkops.exception.ErrorCode errorCode) {
         return new ApiResponse<>(errorCode.getCode(), errorCode.getMessage(), null);
     }
-
 }

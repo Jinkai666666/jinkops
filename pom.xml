@@ -26,7 +26,7 @@
     </properties>
 
     <dependencies>
-        <!-- Web 模塊 -->
+        <!-- Web 模組 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -119,7 +119,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
-        <!-- Quartz 定时任务 -->
+        <!-- Quartz 定時任務 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-quartz</artifactId>
@@ -144,7 +144,7 @@
 
     <build>
         <plugins>
-            <!-- 編譯插件 -->
+            <!-- 編譯外掛 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -162,13 +162,13 @@
                 </configuration>
             </plugin>
 
-            <!-- Spring Boot 打包插件 -->
+            <!-- Spring Boot 打包外掛 -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
-            <!-- 跳過測試插件 -->
+            <!-- 跳過測試外掛 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>

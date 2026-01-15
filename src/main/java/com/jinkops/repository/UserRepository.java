@@ -8,6 +8,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // 按用戶名查
     User findByUsername(String username);
-    //刪除 用戶
-    void deleteUserByUsername(String Username);
+    // 刪除用戶
+    void deleteUserByUsername(String username);
 }

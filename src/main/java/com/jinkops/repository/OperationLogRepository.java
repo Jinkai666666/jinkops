@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// 日誌入庫操作接口
+// 日誌入庫操作介面
 @Repository
 public interface OperationLogRepository extends JpaRepository<OperationLogEntity, Long> {
 
@@ -67,5 +67,4 @@ public interface OperationLogRepository extends JpaRepository<OperationLogEntity
 
     // 全空時兜底最近 100 筆
     List<OperationLogEntity> findTop100ByOrderByCreateTimeDesc();
-
 }

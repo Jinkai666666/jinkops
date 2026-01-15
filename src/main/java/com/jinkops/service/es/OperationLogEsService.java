@@ -20,12 +20,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * ???????????? ES ????????????
+ * 操作日誌 ES 搜尋服務
  *
- * ?????????
- * 1. ???????????? Elasticsearch
- * 2. ???????????????????????????Controller???
- * 3. ?????????????????????Exception
+ * 功能說明：
+ * 1. 透過 ES 進行查詢
+ * 2. 回傳列表交給 Controller
+ * 3. 例外交給上層處理
  */
 @Service
 @RequiredArgsConstructor
@@ -34,11 +34,11 @@ public class OperationLogEsService {
     private final ElasticsearchClient elasticsearchClient;
 
     /**
-     * ?????????????????????ES???
+     * 操作日誌搜尋（走 ES）
      *
-     * @param keyword   ????????????username / operation???
-     * @param startTime ???????????????epoch milli???
-     * @param endTime   ???????????????epoch milli???
+     * @param keyword   模糊搜尋：username / operation 等
+     * @param startTime 起始時間（epoch milli）
+     * @param endTime   結束時間（epoch milli）
      */
     public List<OperationLogEntity> search(
             String keyword,
@@ -48,7 +48,7 @@ public class OperationLogEsService {
 
         List<Query> mustQueries = new ArrayList<>();
 
-        // ===== ??????????????????username / operation???====
+        // 模糊搜尋：username / operation 等
         if (keyword != null && !keyword.isBlank()) {
             mustQueries.add(Query.of(q -> q
                     .multiMatch(m -> m
@@ -58,7 +58,7 @@ public class OperationLogEsService {
             ));
         }
 
-        // ===== ?????????????????????createTime???====
+        // 時間範圍：createTime
         if (startTime != null || endTime != null) {
 
             mustQueries.add(Query.of(q -> q
@@ -76,10 +76,10 @@ public class OperationLogEsService {
             ));
         }
 
-        // ===== ?????? Bool Query =====
+        // 組成 Bool Query
         BoolQuery boolQuery = BoolQuery.of(b -> b.must(mustQueries));
 
-        // ===== ???????????? =====
+        // 執行搜尋
         SearchResponse<Map> response =
                 elasticsearchClient.search(s -> s
                                 .index("operation_log_search")
@@ -90,11 +90,11 @@ public class OperationLogEsService {
                                                 .order(co.elastic.clients.elasticsearch._types.SortOrder.Desc)
                                         )
                                 )
-                                .size(100), // ????????????????????????
+                                .size(100),
                         Map.class
                 );
 
-        // ===== ?????????=====
+        // 解析結果
         List<OperationLogEntity> result = new ArrayList<>();
         for (Hit<Map> hit : response.hits().hits()) {
             Map source = hit.source();
@@ -123,7 +123,7 @@ public class OperationLogEsService {
     }
 
     /**
-     * epoch milli ???ES ??????????????????
+     * epoch milli 轉成 ES 可用的時間格式
      */
     private String formatTime(Long epochMilli) {
         return Instant.ofEpochMilli(epochMilli)

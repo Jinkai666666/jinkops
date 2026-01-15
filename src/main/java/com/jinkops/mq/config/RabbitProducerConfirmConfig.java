@@ -16,26 +16,26 @@ public class RabbitProducerConfirmConfig {
     @PostConstruct
     public void init() {
 
-        // Confirm：是否到达 Exchange
+        // Confirm：是否到達 Exchange
         rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {
             if (ack) {
-                log.info("【Confirm OK】消息已到达 Exchange");
+                log.info("【Confirm OK】訊息已到達 Exchange");
             } else {
-                log.error("【Confirm FAIL】消息未到达 Exchange，原因={}", cause);
+                log.error("【Confirm FAIL】訊息未到達 Exchange，原因={}", cause);
             }
         });
 
         // Return：Exchange 有，但路由不到 Queue
         rabbitTemplate.setReturnsCallback(returned -> {
             log.error(
-                    "【Return】路由失败 exchange={} routingKey={} replyText={}",
+                    "【Return】路由失敗 exchange={} routingKey={} replyText={}",
                     returned.getExchange(),
                     returned.getRoutingKey(),
                     returned.getReplyText()
             );
         });
 
-        // 必须，否则 Return 不触发
+        // 必須，否則 Return 不觸發
         rabbitTemplate.setMandatory(true);
     }
 }

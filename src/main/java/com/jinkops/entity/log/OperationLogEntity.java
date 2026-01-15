@@ -1,13 +1,18 @@
 package com.jinkops.entity.log;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 /**
  * 操作日誌實體類
- * 用於存儲每次帶 @OperationLog 註解的方法調用信息
+ * 用於存儲每次帶 @OperationLog 註解的方法呼叫資訊
  */
 @Entity
 @Table(name = "operation_log")
@@ -25,7 +30,7 @@ public class OperationLogEntity {
     @Column(length = 64)
     private String username;
 
-    // 操作名稱或類型（“新增用戶”、“刪除日誌”等）
+    // 操作名稱或類型（"新增用戶"、"刪除日誌" 等）
     @Column(length = 128)
     private String operation;
 
@@ -41,7 +46,7 @@ public class OperationLogEntity {
     @Column(nullable = false, length = 128)
     private String methodName;
 
-    // 方法參數（JSON化後的字符串）
+    // 方法參數（JSON 化後的字串）
     @Column(columnDefinition = "TEXT")
     private String args;
 

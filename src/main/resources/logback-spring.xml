@@ -3,14 +3,14 @@
 
     <property name="LOG_PATH" value="logs"/>
 
-    <!-- 控制檯輸出（去掉顏色編碼，避免亂碼） -->
+    <!-- 控制臺輸出（移除顏色編碼，避免亂碼） -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [traceId=%X{traceId}] [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <!-- 異步輸出，降低同步 IO 對請求的阻塞 -->
+    <!-- 非同步輸出，降低同步 IO 對請求的阻塞 -->
     <appender name="ASYNC_CONSOLE" class="ch.qos.logback.classic.AsyncAppender">
         <queueSize>8192</queueSize>
         <discardingThreshold>0</discardingThreshold>

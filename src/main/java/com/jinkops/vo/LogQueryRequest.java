@@ -12,10 +12,10 @@ public class LogQueryRequest {
     // 每頁大小
     private Integer size = 10;
 
-    // 模糊搜索字段（用戶名/模塊/路徑）
+    // 模糊搜尋欄位（用戶名/模組/路徑）
     private String keyword;
 
-    // 起始時間（字符串，前端傳 yyyy-MM-ddTHH:mm:ss）
+    // 起始時間（字串，前端傳 yyyy-MM-ddTHH:mm:ss）
     private String startTime;
 
     // 結束時間

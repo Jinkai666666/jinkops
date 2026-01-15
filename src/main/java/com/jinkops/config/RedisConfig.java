@@ -19,7 +19,7 @@ public class RedisConfig {
         template.setConnectionFactory(factory);
 
         // 序列化，存進去前轉格式
-        //序列化成字符串
+        // 序列化成字串
         StringRedisSerializer keySerializer = new StringRedisSerializer();
         // value 轉成 JSON
         GenericJackson2JsonRedisSerializer valueSerializer = new GenericJackson2JsonRedisSerializer();
@@ -28,13 +28,13 @@ public class RedisConfig {
         template.setKeySerializer(keySerializer);
         // value JSON 格式存
         template.setValueSerializer(valueSerializer);
-        // hash 的 key 也用字符串（比如 redis 的 map）
+        // hash 的 key 也用字串（比如 redis 的 map）
         template.setHashKeySerializer(keySerializer);
         // hash 的 value 也用 JSON
         template.setHashValueSerializer(valueSerializer);
 
-        //初始化配置生效
-        template.afterPropertiesSet();  
+        // 初始化設定生效
+        template.afterPropertiesSet();
         return template;
     }
 }

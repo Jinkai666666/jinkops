@@ -1,0 +1,289 @@
+{
+  "info": {
+    "_postman_id": "f6c8c1d2-2b6c-4b5f-8e21-9b51c9d9f4a3",
+    "name": "JinkOps API",
+    "description": "JinkOps 後端接口集合",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "登入與 token 校驗",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"123456\"\n}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res && res.data && res.data.token) {",
+                  "  pm.environment.set('token', res.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "description": "用戶登入並寫入 token"
+        },
+        {
+          "name": "Verify Token",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/auth/verify?token={{token}}"
+          },
+          "description": "校驗 token 是否有效"
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "description": "用戶管理",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/users"
+          },
+          "description": "查全部用戶"
+        },
+        {
+          "name": "Get User By Username",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/users/{{username}}"
+          },
+          "description": "按用戶名查詢"
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"demo\",\n  \"password\": \"123456\",\n  \"email\": \"demo@example.com\"\n}" },
+            "url": "{{baseUrl}}/api/users"
+          },
+          "description": "新增用戶"
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"demo\",\n  \"password\": \"newpass\",\n  \"email\": \"demo_new@example.com\"\n}" },
+            "url": "{{baseUrl}}/api/users"
+          },
+          "description": "更新用戶資料"
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/users/{{username}}"
+          },
+          "description": "刪除用戶"
+        },
+        {
+          "name": "Page Users",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/users/page?page=1&size=10"
+          },
+          "description": "分頁查用戶"
+        }
+      ]
+    },
+    {
+      "name": "Role",
+      "description": "角色管理",
+      "item": [
+        {
+          "name": "List Roles",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/roles"
+          },
+          "description": "查全部角色"
+        },
+        {
+          "name": "Create Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"ADMIN\"\n}" },
+            "url": "{{baseUrl}}/api/roles"
+          },
+          "description": "新增角色"
+        },
+        {
+          "name": "Update Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"OPERATOR\"\n}" },
+            "url": "{{baseUrl}}/api/roles/{{id}}"
+          },
+          "description": "更新角色"
+        },
+        {
+          "name": "Delete Role",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/roles/{{id}}"
+          },
+          "description": "刪除角色"
+        }
+      ]
+    },
+    {
+      "name": "Permission",
+      "description": "權限管理",
+      "item": [
+        {
+          "name": "List Permissions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/permissions"
+          },
+          "description": "查全部權限"
+        },
+        {
+          "name": "Create Permission",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"sys:user:list\"\n}" },
+            "url": "{{baseUrl}}/api/permissions"
+          },
+          "description": "新增權限"
+        },
+        {
+          "name": "Delete Permission",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/permissions/{{id}}"
+          },
+          "description": "刪除權限"
+        }
+      ]
+    },
+    {
+      "name": "RBAC",
+      "description": "關聯管理",
+      "item": [
+        {
+          "name": "Assign User Roles",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"userId\": 1,\n  \"roleIds\": [1, 2]\n}" },
+            "url": "{{baseUrl}}/api/rbac/user-role/assign"
+          },
+          "description": "給用戶綁角色"
+        },
+        {
+          "name": "Assign Role Permissions",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"roleId\": 1,\n  \"permissionIds\": [1, 3, 5]\n}" },
+            "url": "{{baseUrl}}/api/rbac/role-permission/assign"
+          },
+          "description": "給角色綁權限"
+        }
+      ]
+    },
+    {
+      "name": "OperationLog",
+      "description": "操作日誌查詢",
+      "item": [
+        {
+          "name": "List Logs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/logs?page=0&size=10&sort=createTime,desc"
+          },
+          "description": "分頁查日誌"
+        },
+        {
+          "name": "Search Logs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/logs/search?keyword=login&page=0&size=10&sort=createTime,desc"
+          },
+          "description": "模糊搜尋日誌"
+        },
+        {
+          "name": "Page Logs",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"page\": 0,\n  \"size\": 10,\n  \"keyword\": \"login\",\n  \"startTime\": \"2024-01-01T00:00:00\",\n  \"endTime\": \"2024-12-31T23:59:59\"\n}"
+            },
+            "url": "{{baseUrl}}/api/logs/page"
+          },
+          "description": "統一入口分頁查日誌"
+        },
+        {
+          "name": "Search Advanced",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/logs/search/advanced?keyword=login&startTime=1700000000000&endTime=1730000000000"
+          },
+          "description": "含降級的日誌搜尋"
+        }
+      ]
+    }
+  ]
+}
