@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Noto+Sans+SC:wght@400;600&display=swap');
+
+:root {
+  --page-gradient: radial-gradient(circle at 20% 20%, #1b1f3b 0, #0f172a 40%, #0a0f1c 100%);
+  --card-bg: rgba(255, 255, 255, 0.04);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --primary: #7ce7a4;
+  --accent: #6e9fff;
+  --text-color-strong: #e7ecf5;
+  --text-color-muted: #97a3b6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Space Grotesk', 'Noto Sans SC', 'Segoe UI', sans-serif;
+  color: var(--text-color-strong);
+  background: var(--page-gradient);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.page {
+  padding: 32px;
+}
+
+.glass-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
+}

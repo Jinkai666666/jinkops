@@ -1,0 +1,148 @@
+<script setup lang="ts">
+import { computed } from 'vue';
+import { RouterView, useRoute, useRouter } from 'vue-router';
+import { useAuthStore } from '../store/auth';
+import { UserFilled, List, Document } from '@element-plus/icons-vue';
+
+const router = useRouter();
+const route = useRoute();
+const auth = useAuthStore();
+
+const menus = [
+  { label: '用户列表', path: '/users', icon: UserFilled, perm: null },
+  { label: '操作日志', path: '/logs', icon: Document, perm: null }
+];
+
+const allowedMenus = computed(() => menus.filter((m) => !m.perm || auth.hasPermission(m.perm)));
+
+const onSelect = (key: string) => router.push(key);
+const logout = () => {
+  auth.logout();
+  router.push('/login');
+};
+
+const roleCodes = computed(() => auth.user?.roles?.map((r) => r.code) || []);
+</script>
+
+<template>
+  <div class="layout page">
+    <div class="brand glass-card">
+      <div>
+        <p class="eyebrow">JinkOps</p>
+        <h1>统一权限与日志测试台</h1>
+      </div>
+      <div class="user-meta">
+        <div class="who">
+          <el-icon><UserFilled /></el-icon>
+          <span>{{ auth.username || '未登录' }}</span>
+        </div>
+        <div class="roles">
+          <el-tag v-for="r in roleCodes" :key="r" size="small" type="success" effect="dark">{{ r }}</el-tag>
+        </div>
+        <el-button text size="small" type="primary" @click="logout">退出</el-button>
+      </div>
+    </div>
+
+    <div class="body glass-card">
+      <el-container>
+        <el-aside width="220px" class="nav-pane">
+          <el-menu
+            :default-active="route.path"
+            class="nav"
+            background-color="transparent"
+            text-color="var(--text-color-strong)"
+            active-text-color="var(--primary)"
+            @select="onSelect"
+          >
+            <el-menu-item v-for="item in allowedMenus" :key="item.path" :index="item.path">
+              <el-icon><component :is="item.icon" /></el-icon>
+              <span>{{ item.label }}</span>
+            </el-menu-item>
+          </el-menu>
+          <div class="meta">
+            <p>权限点 {{ auth.permissions.length }}</p>
+            <p class="muted">菜单与按钮根据权限自动隐藏</p>
+          </div>
+        </el-aside>
+        <el-main class="content">
+          <RouterView />
+        </el-main>
+      </el-container>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.layout {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--text-color-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+h1 {
+  margin: 6px 0 0;
+  font-size: 22px;
+  color: var(--text-color-strong);
+}
+
+.user-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.who {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.roles {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.body {
+  overflow: hidden;
+}
+
+.nav-pane {
+  border-right: 1px solid var(--card-border);
+  padding: 16px 12px;
+}
+
+.nav {
+  border: none;
+}
+
+.meta {
+  margin-top: 24px;
+  font-size: 13px;
+  color: var(--text-color-muted);
+}
+
+.muted {
+  color: var(--text-color-muted);
+}
+
+.content {
+  padding: 18px 24px;
+}
+</style>
