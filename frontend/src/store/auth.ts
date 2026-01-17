@@ -31,9 +31,11 @@ export const useAuthStore = defineStore('auth', {
         this.user = detail;
         const perms = new Set<string>();
         detail.roles?.forEach((role) => {
-          perms.add(`ROLE_${role.code}`);
-          role.permissions?.forEach((p) => perms.add(p.code));
+          const roleCode = (role.code || '').toUpperCase();
+          perms.add(`ROLE_${roleCode}`);
+          role.permissions?.forEach((p) => perms.add((p.code || '').toUpperCase()));
         });
+        // 后端权限码返回大小写不定，统一大写便于比较
         this.permissions = Array.from(perms);
       }
     },
@@ -46,12 +48,16 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('username');
     },
     hasPermission(codes: string | string[]) {
+      const isAdmin =
+        this.user?.roles?.some((r) => (r.code || '').toUpperCase().includes('ADMIN')) ||
+        this.permissions.includes('ROLE_ADMIN');
+      if (isAdmin) return true;
       if (!codes) return true;
       if (!this.permissions.length) return false;
       if (Array.isArray(codes)) {
-        return codes.some((c) => this.permissions.includes(c));
+        return codes.some((c) => this.permissions.includes((c || '').toUpperCase()));
       }
-      return this.permissions.includes(codes);
+      return this.permissions.includes((codes || '').toUpperCase());
     }
   }
 });

@@ -1,0 +1,95 @@
+# Copy this file to application.yml locally and fill with real values.
+# Keep real addresses, credentials, and tokens out of the repo.
+
+elasticsearch:
+  host: ${ELASTICSEARCH_HOST:localhost}
+  port: ${ELASTICSEARCH_PORT:9200}
+
+management:
+  health:
+    elasticsearch:
+      enabled: false
+
+app:
+  security:
+    enabled: true
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL:jdbc:mysql://localhost:3306/jinkops?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:password}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX:30}
+      minimum-idle: ${DB_POOL_MIN:5}
+      connection-timeout: ${DB_CONN_TIMEOUT:20000}
+      idle-timeout: ${DB_IDLE_TIMEOUT:600000}
+      max-lifetime: ${DB_MAX_LIFETIME:1800000}
+  rabbitmq:
+    host: ${RABBIT_HOST:localhost}
+    port: ${RABBIT_PORT:5672}
+    username: ${RABBIT_USER:guest}
+    password: ${RABBIT_PASSWORD:guest}
+    virtual-host: ${RABBIT_VHOST:/}
+    listener:
+      simple:
+        auto-startup: false
+    connection-timeout: 5000
+    publisher-confirm-type: correlated
+    publisher-returns: true
+  quartz:
+    job-store-type: memory
+    scheduler-name: jinkops-quartz
+  main:
+    lazy-initialization: false
+    banner-mode: "off"
+  devtools:
+    restart:
+      enabled: false
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+      show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc.lob.non_contextual_creation: true
+        jdbc.batch_size: 50
+        order_inserts: true
+        order_updates: true
+        batch_versioned_data: true
+        default_batch_fetch_size: 50
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.web.servlet.MultipartAutoConfiguration
+      - org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
+      - org.redisson.spring.starter.RedissonAutoConfigurationV2
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      database: ${REDIS_DB:0}
+      # password: ${REDIS_PASSWORD:}
+
+redisson:
+  singleServerConfig:
+    address: ${REDIS_URI:redis://localhost:6379}
+    database: ${REDIS_DB:0}
+
+server:
+  port: ${SERVER_PORT:8080}
+
+logging:
+  level:
+    root: INFO
+    com.jinkops: INFO
+    org.springframework.boot.StartupInfoLogger: INFO
+  pattern:
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} [traceId=%X{traceId}] %clr(%-5level) %clr(%logger{36}){cyan} - %msg%n"
+
+springdoc:
+  api-docs:
+    enabled: true

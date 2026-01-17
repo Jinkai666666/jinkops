@@ -28,5 +28,29 @@ application.yml
 .DS_Store
 Thumbs.db
 
+### Secrets ###
+.env
+.env.*
+*.env
+*.env.*
+*.local
+*.local.*
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+*.crt
+*.cer
+*.der
+*.gpg
+*.asc
+*.pfx
+*.csr
+secrets/
+*.postman_environment.json
+!**/.env.example
+!src/main/resources/application-example.yml
+
 ### Others ###
 HELP.md

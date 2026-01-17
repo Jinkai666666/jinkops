@@ -48,9 +48,11 @@ public class OperationLogAspect {
         String desc = operationLog != null ? operationLog.value() : "";
 
         String traceId = MDC.get("traceId");
+        boolean traceAdded = false;
         if (traceId == null || traceId.isBlank()) {
             traceId = UUID.randomUUID().toString();
             MDC.put("traceId", traceId);
+            traceAdded = true;
         }
 
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -83,21 +85,29 @@ public class OperationLogAspect {
             log.info("[AUDIT] user={} action={} target={}#{} result=failed",
                     username, desc, className, methodName);
 
-            OperationLogEntity entity = new OperationLogEntity();
-            entity.setUsername(username);
-            entity.setOperation(desc + " (異常)");
-            entity.setTraceId(traceId);
-            entity.setClassName(className);
-            entity.setMethodName(methodName);
-            entity.setArgs(args);
-            entity.setDescription(desc + " (異常)");
-            entity.setElapsedTime(time);
-            entity.setCreateTime(LocalDateTime.now());
+            try {
+                OperationLogEntity entity = new OperationLogEntity();
+                entity.setUsername(username);
+                entity.setOperation(desc + " (異常)");
+                entity.setTraceId(traceId);
+                entity.setClassName(className);
+                entity.setMethodName(methodName);
+                entity.setArgs(args);
+                entity.setDescription(desc + " (異常)");
+                entity.setElapsedTime(time);
+                entity.setCreateTime(LocalDateTime.now());
 
-            repository.save(entity);
-            eventLogService.sendOperationLog(entity);
+                repository.save(entity);
+                eventLogService.sendOperationLog(entity);
+            } catch (Exception logError) {
+                log.warn("Failed to persist/emit operation log after exception", logError);
+            }
 
             throw e;
+        } finally {
+            if (traceAdded) {
+                MDC.remove("traceId");
+            }
         }
     }
 }

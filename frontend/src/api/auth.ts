@@ -9,3 +9,7 @@ export function login(payload: { username: string; password: string }) {
 export function verify(token: string) {
   return apiGet<string>(API_ENDPOINTS.auth.verify, { params: { token } });
 }
+
+export function register(payload: { username: string; password: string; email?: string }) {
+  return apiPost(API_ENDPOINTS.auth.register, payload);
+}

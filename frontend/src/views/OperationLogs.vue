@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { pageLogs } from '../api/logs';
+import { getLogs, searchLogs, pageLogs, advancedSearchLogs } from '../api/logs';
 import type { OperationLog } from '../api/types';
 import { formatLocal, formatDisplay } from '../utils/time';
 
+type Mode = 'page' | 'list' | 'search' | 'advanced';
+
 const loading = ref(false);
+const mode = ref<Mode>('page');
 const logs = ref<OperationLog[]>([]);
 const query = reactive({
   keyword: '',
@@ -15,28 +18,72 @@ const query = reactive({
   total: 0
 });
 
+let searchTimer: number | undefined;
+
+const tableData = computed(() => {
+  if (mode.value === 'advanced') {
+    const start = (query.page - 1) * query.size;
+    return logs.value.slice(start, start + query.size);
+  }
+  return logs.value;
+});
+
 const fetchLogs = async () => {
   loading.value = true;
   try {
-    const body: any = {
-      page: query.page - 1,
-      size: query.size
-    };
-    if (query.keyword) {
-      body.keyword = query.keyword;
+    if (mode.value === 'page') {
+      const body: any = { page: query.page - 1, size: query.size };
+      if (query.keyword) body.keyword = query.keyword;
+      if (query.range.length === 2) {
+        body.startTime = formatLocal(query.range[0]);
+        body.endTime = formatLocal(query.range[1]);
+      }
+      const data = await pageLogs(body);
+      logs.value = data.content;
+      query.total = data.totalElements;
+      return;
     }
-    if (query.range && query.range.length === 2) {
-      body.startTime = formatLocal(query.range[0]);
-      body.endTime = formatLocal(query.range[1]);
+
+    if (mode.value === 'list') {
+      const data = await getLogs(query.page - 1, query.size);
+      logs.value = data.content;
+      query.total = data.totalElements;
+      return;
     }
-    const data = await pageLogs(body);
-    logs.value = data.content;
-    query.total = data.totalElements;
-  } catch (e) {
-    ElMessage.error('加载日志失败');
+
+    if (mode.value === 'search') {
+      const data = await searchLogs(query.keyword, query.page - 1, query.size);
+      logs.value = data.content;
+      query.total = data.totalElements;
+      return;
+    }
+
+    // advanced
+    const params: Record<string, any> = {};
+    if (query.keyword) params.keyword = query.keyword;
+    if (query.range.length === 2) {
+      params.startTime = new Date(query.range[0]).getTime();
+      params.endTime = new Date(query.range[1]).getTime();
+    }
+    const data = await advancedSearchLogs(params);
+    logs.value = data || [];
+    query.total = logs.value.length;
+    query.page = 1;
+  } catch (e: any) {
+    if (e?.status === 403) {
+      ElMessage.error('无权限');
+    } else {
+      ElMessage.error('加载日志失败');
+    }
   } finally {
     loading.value = false;
   }
+};
+
+const switchMode = (next: Mode) => {
+  mode.value = next;
+  query.page = 1;
+  fetchLogs();
 };
 
 const resetFilters = () => {
@@ -46,45 +93,88 @@ const resetFilters = () => {
   fetchLogs();
 };
 
+const handleSearchInput = (val: string) => {
+  if (searchTimer) window.clearTimeout(searchTimer);
+  searchTimer = window.setTimeout(() => {
+    query.keyword = val.trim();
+    query.page = 1;
+    fetchLogs();
+  }, 300);
+};
+
 const handlePageChange = (page: number) => {
   query.page = page;
-  fetchLogs();
+  if (mode.value !== 'advanced') {
+    fetchLogs();
+  }
 };
 
 const handleSizeChange = (size: number) => {
   query.size = size;
   query.page = 1;
-  fetchLogs();
+  if (mode.value !== 'advanced') {
+    fetchLogs();
+  }
 };
 
 onMounted(fetchLogs);
 </script>
 
 <template>
-  <div class="logs-view">
-    <div class="header">
+  <div class="logs-view page">
+    <div class="glass-card hero">
       <div>
-        <p class="eyebrow">Operation Logs</p>
-        <h2>操作日志分页</h2>
+        <p class="eyebrow">日志 / 搜索 / 降级</p>
+        <h2>操作日志：分页、关键词、时间区间</h2>
+        <p class="muted">
+          所有日志接口一屏覆盖：POST /api/logs/page（统一入口），GET /api/logs（基础分页），GET
+          /api/logs/search（ES 搜索），GET /api/logs/search/advanced（带时间戳，含降级）。
+        </p>
       </div>
-      <div class="filters">
-        <el-input v-model="query.keyword" placeholder="关键字（用户名/操作）" clearable />
-        <el-date-picker
-          v-model="query.range"
-          type="datetimerange"
-          start-placeholder="开始时间"
-          end-placeholder="结束时间"
-          value-format="YYYY-MM-DDTHH:mm:ss"
-        />
-        <el-button type="primary" @click="fetchLogs">查询</el-button>
-        <el-button text @click="resetFilters">重置</el-button>
+      <div class="mode-buttons">
+        <el-button :type="mode === 'page' ? 'primary' : 'default'" @click="switchMode('page')">
+          统一分页 · POST /api/logs/page
+        </el-button>
+        <el-button :type="mode === 'list' ? 'primary' : 'default'" @click="switchMode('list')">
+          基础列表 · GET /api/logs
+        </el-button>
+        <el-button :type="mode === 'search' ? 'primary' : 'default'" @click="switchMode('search')">
+          关键词搜索 · GET /api/logs/search
+        </el-button>
+        <el-button :type="mode === 'advanced' ? 'primary' : 'default'" @click="switchMode('advanced')">
+          高级搜索 · GET /api/logs/search/advanced
+        </el-button>
       </div>
     </div>
 
     <div class="glass-card table-card">
-      <el-table :data="logs" stripe v-loading="loading" height="540">
+      <div class="header">
+        <div>
+          <p class="eyebrow">Operation Logs</p>
+          <h3>日志列表（{{ mode }}）</h3>
+        </div>
+        <div class="filters">
+          <el-input
+            placeholder="关键词（用户 / 操作 / 描述）"
+            clearable
+            @input="handleSearchInput"
+            style="width: 240px"
+          />
+          <el-date-picker
+            v-model="query.range"
+            type="datetimerange"
+            start-placeholder="开始时间"
+            end-placeholder="结束时间"
+            style="width: 360px"
+          />
+          <el-button type="primary" :loading="loading" @click="fetchLogs">查询</el-button>
+          <el-button text @click="resetFilters">重置</el-button>
+        </div>
+      </div>
+
+      <el-table :data="tableData" stripe v-loading="loading" height="540">
         <el-table-column prop="id" label="ID" width="70" />
-        <el-table-column prop="username" label="用户名" width="140" />
+        <el-table-column prop="username" label="用户" width="140" />
         <el-table-column prop="operation" label="操作" width="180" />
         <el-table-column prop="description" label="描述" width="200" />
         <el-table-column prop="elapsedTime" label="耗时(ms)" width="100" />
@@ -95,7 +185,7 @@ onMounted(fetchLogs);
             </el-tooltip>
           </template>
         </el-table-column>
-        <el-table-column label="位置" min-width="200">
+        <el-table-column label="定位" min-width="200">
           <template #default="{ row }">
             <div class="muted">{{ row.className }}#{{ row.methodName }}</div>
             <div class="muted">traceId: {{ row.traceId }}</div>
@@ -120,7 +210,9 @@ onMounted(fetchLogs);
         />
       </div>
       <div class="note">
-        <p class="muted">接口映射：POST /api/logs/page，body: { page(从0开始), size, keyword?, startTime?, endTime? }</p>
+        <p class="muted">
+          当前模式: {{ mode }} · 已覆盖接口 /api/logs、/api/logs/search、/api/logs/page、/api/logs/search/advanced
+        </p>
       </div>
     </div>
   </div>
@@ -131,6 +223,24 @@ onMounted(fetchLogs);
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+}
+
+.muted {
+  color: var(--text-color-muted);
+}
+
+.mode-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(240px, 1fr));
+  gap: 8px;
+  align-items: center;
 }
 
 .header {
@@ -148,16 +258,12 @@ onMounted(fetchLogs);
   font-size: 12px;
 }
 
-h2 {
-  margin: 4px 0 0;
-}
-
 .filters {
-  display: grid;
-  grid-template-columns: 1fr 2fr auto auto;
+  display: flex;
   gap: 10px;
   align-items: center;
-  width: min(880px, 100%);
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .table-card {
@@ -178,11 +284,19 @@ h2 {
   white-space: nowrap;
 }
 
-.muted {
-  color: var(--text-color-muted);
-}
-
 .note {
   margin-top: 8px;
+}
+
+@media (max-width: 1080px) {
+  .hero {
+    flex-direction: column;
+  }
+  .mode-buttons {
+    grid-template-columns: 1fr;
+  }
+  .filters {
+    justify-content: flex-start;
+  }
 }
 </style>

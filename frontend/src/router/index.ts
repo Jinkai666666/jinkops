@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
+import { ElMessage } from 'element-plus';
 import { useAuthStore } from '../store/auth';
 
 const routes: RouteRecordRaw[] = [
@@ -14,13 +15,31 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         path: '',
-        redirect: '/users'
+        redirect: '/overview'
+      },
+      {
+        path: '/overview',
+        name: 'overview',
+        component: () => import('../views/Overview.vue'),
+        meta: { title: '能力总览', requiresAuth: true }
       },
       {
         path: '/users',
         name: 'users',
         component: () => import('../views/Users.vue'),
         meta: { title: '用户列表', requiresAuth: true }
+      },
+      {
+        path: '/roles',
+        name: 'roles',
+        component: () => import('../views/Roles.vue'),
+        meta: { title: '角色管理', requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: '/permissions',
+        name: 'permissions',
+        component: () => import('../views/Permissions.vue'),
+        meta: { title: '权限管理', requiresAuth: true, requiresAdmin: true }
       },
       {
         path: '/logs',
@@ -54,7 +73,16 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (to.path === '/login' && auth.token) {
-    return next('/users');
+    return next('/overview');
+  }
+
+  if (to.meta.requiresAdmin) {
+    const roles = auth.user?.roles || [];
+    const isAdmin = roles.some((r) => (r.code || '').toUpperCase().includes('ADMIN')) || auth.permissions.includes('ROLE_ADMIN');
+    if (!isAdmin) {
+      ElMessage.error('无权限执行该操作');
+      return next('/overview');
+    }
   }
 
   next();

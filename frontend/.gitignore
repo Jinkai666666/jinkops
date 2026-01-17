@@ -2,3 +2,10 @@ node_modules
 dist
 .DS_Store
 *.log
+.env
+.env.*
+*.env
+*.env.*
+*.local
+*.local.*
+!.env.example

@@ -3,11 +3,13 @@ const API_BASE = '/api';
 export const API_ENDPOINTS = {
   auth: {
     login: `${API_BASE}/auth/login`,
-    verify: `${API_BASE}/auth/verify`
+    verify: `${API_BASE}/auth/verify`,
+    register: `${API_BASE}/auth/register`
   },
   users: {
     base: `${API_BASE}/users`,
-    page: `${API_BASE}/users/page`
+    page: `${API_BASE}/users/page`,
+    register: `${API_BASE}/users/register`
   },
   roles: {
     base: `${API_BASE}/roles`

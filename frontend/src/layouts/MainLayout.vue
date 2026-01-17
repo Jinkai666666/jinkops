@@ -2,14 +2,17 @@
 import { computed } from 'vue';
 import { RouterView, useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../store/auth';
-import { UserFilled, List, Document } from '@element-plus/icons-vue';
+import { UserFilled, Document, Compass, List } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const route = useRoute();
 const auth = useAuthStore();
 
 const menus = [
-  { label: '用户列表', path: '/users', icon: UserFilled, perm: null },
+  { label: '能力总览', path: '/overview', icon: Compass, perm: null },
+  { label: '用户管理', path: '/users', icon: UserFilled, perm: null },
+  { label: '角色管理', path: '/roles', icon: List, perm: 'SYS:ROLE:LIST' },
+  { label: '权限管理', path: '/permissions', icon: Document, perm: 'SYS:PERM:LIST' },
   { label: '操作日志', path: '/logs', icon: Document, perm: null }
 ];
 
@@ -29,7 +32,7 @@ const roleCodes = computed(() => auth.user?.roles?.map((r) => r.code) || []);
     <div class="brand glass-card">
       <div>
         <p class="eyebrow">JinkOps</p>
-        <h1>统一权限与日志测试台</h1>
+        <h1>后端能力可视演示台</h1>
       </div>
       <div class="user-meta">
         <div class="who">
@@ -60,8 +63,8 @@ const roleCodes = computed(() => auth.user?.roles?.map((r) => r.code) || []);
             </el-menu-item>
           </el-menu>
           <div class="meta">
-            <p>权限点 {{ auth.permissions.length }}</p>
-            <p class="muted">菜单与按钮根据权限自动隐藏</p>
+            <p>权限数：{{ auth.permissions.length }}</p>
+            <p class="muted">JWT + RBAC + 缓存 + 审计链路就绪</p>
           </div>
         </el-aside>
         <el-main class="content">

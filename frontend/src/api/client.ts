@@ -1,6 +1,7 @@
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 import { ElMessage } from 'element-plus';
 import type { ApiResponse } from './types';
+import { useAuthStore } from '../store/auth';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || '';
 
@@ -10,7 +11,8 @@ export const client = axios.create({
 });
 
 client.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const auth = (useAuthStore as typeof useAuthStore & { getInstance?: () => ReturnType<typeof useAuthStore> }).getInstance?.();
+  const token = auth?.token || localStorage.getItem('token');
   if (token) {
     config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;
@@ -39,7 +41,7 @@ client.interceptors.response.use(
         window.location.href = '/login';
       }
     } else if (status === 403) {
-      ElMessage.error('权限不足');
+      ElMessage.error('无权限执行该操作');
     } else {
       ElMessage.error(message || '请求出错');
     }

@@ -14,6 +14,10 @@ export function createUser(user: Partial<User>) {
   return apiPost<User>(API_ENDPOINTS.users.base, user);
 }
 
+export function registerUser(user: Partial<User>) {
+  return apiPost<User>(API_ENDPOINTS.users.register, user);
+}
+
 export function updateUser(user: Partial<User>) {
   return apiPut<User>(API_ENDPOINTS.users.base, user);
 }

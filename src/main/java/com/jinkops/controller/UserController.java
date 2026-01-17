@@ -51,6 +51,15 @@ public class UserController {
         return ApiResponse.success(userService.addUser(user));
     }
 
+    @OperationLog("註冊用戶")
+    @PostMapping("/register")
+    public ApiResponse<User> register(@RequestBody User user) {
+        log.info("[API] POST /api/users/register");
+        return ApiResponse.success(userService.createUser(user));
+    }
+
+
+
     // 刪除用戶
     @OperationLog("刪除用戶")
     @DeleteMapping("/{username}")

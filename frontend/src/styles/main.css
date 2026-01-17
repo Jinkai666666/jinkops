@@ -1,13 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Noto+Sans+SC:wght@400;600&display=swap');
 
 :root {
-  --page-gradient: radial-gradient(circle at 20% 20%, #1b1f3b 0, #0f172a 40%, #0a0f1c 100%);
-  --card-bg: rgba(255, 255, 255, 0.04);
+  --page-gradient: radial-gradient(circle at 20% 20%, #0f172a 0, #0b1222 45%, #050a16 100%);
+  --page-overlay: radial-gradient(circle at 80% 10%, rgba(120, 162, 255, 0.2), transparent 35%),
+    radial-gradient(circle at 10% 80%, rgba(124, 231, 164, 0.18), transparent 30%);
+  --card-bg: rgba(255, 255, 255, 0.05);
   --card-border: rgba(255, 255, 255, 0.08);
+  --card-shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
   --primary: #7ce7a4;
-  --accent: #6e9fff;
+  --accent: #7aa5ff;
   --text-color-strong: #e7ecf5;
-  --text-color-muted: #97a3b6;
+  --text-color-muted: #93a2bd;
+  --surface-2: rgba(255, 255, 255, 0.03);
 }
 
 * {
@@ -23,6 +27,16 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: var(--page-overlay);
+  opacity: 0.9;
+  z-index: 0;
+}
+
 a {
   color: var(--primary);
   text-decoration: none;
@@ -30,12 +44,73 @@ a {
 
 .page {
   padding: 32px;
+  position: relative;
+  z-index: 1;
 }
 
 .glass-card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: 16px;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--card-shadow);
   backdrop-filter: blur(10px);
+}
+
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.el-dialog {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
+  color: var(--text-color-strong);
+}
+
+.el-input__wrapper,
+.el-select__wrapper,
+.el-date-editor.el-input__wrapper {
+  background: var(--surface-2);
+  border: 1px solid var(--card-border);
+  box-shadow: none;
+}
+
+.el-button {
+  border-radius: 10px;
+}
+
+.el-table {
+  --el-table-bg-color: #ffffff;
+  --el-table-header-bg-color: #f5f7fa;
+  --el-table-tr-bg-color: #ffffff;
+  --el-table-row-hover-bg-color: #f0f5ff;
+  --el-table-border-color: #e4e7ed;
+  --el-table-text-color: #303133;
+  background: #ffffff;
+  color: #303133;
+  border-radius: 8px;
+}
+
+.el-table__header-wrapper th {
+  background: #f5f7fa;
+  color: #303133;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.el-table__cell {
+  color: #303133;
+  background: #ffffff;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.el-table__inner-wrapper::before {
+  display: none;
+}
+
+.el-table__row:hover > td.el-table__cell {
+  background: #f0f5ff;
+}
+
+.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+  background: #fafafa;
 }

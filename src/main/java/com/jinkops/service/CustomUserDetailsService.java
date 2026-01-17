@@ -36,12 +36,14 @@ public class CustomUserDetailsService implements UserDetailsService {
         Set<SimpleGrantedAuthority> authorities = new HashSet<>();
 
         for (Role role : user.getRoles()) {
-            // 角色本身當成權限給 Security
-            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getCode()));
+            String roleCode = role.getCode() == null ? "" : role.getCode().trim().toUpperCase();
+            // 角色本身當成權限給 Security（統一大寫避免大小寫/空白問題）
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + roleCode));
 
             // 把角色下面的每個權限加進去
             for (Permission p : role.getPermissions()) {
-                authorities.add(new SimpleGrantedAuthority(p.getCode()));
+                String permCode = p.getCode() == null ? "" : p.getCode().trim().toUpperCase();
+                authorities.add(new SimpleGrantedAuthority(permCode));
             }
         }
 
