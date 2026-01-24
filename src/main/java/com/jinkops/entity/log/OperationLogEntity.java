@@ -61,4 +61,16 @@ public class OperationLogEntity {
     // 記錄時間（對應 DB 欄位 create_time）
     @Column(name = "create_time", nullable = false)
     private LocalDateTime createTime;
+
+    // 路徑
+    @Column(length = 255)
+    private String uri;
+
+    // HTTP 方法
+    @Column(length = 16)
+    private String httpMethod;
+
+    // IP
+    @Column(length = 64)
+    private String ip;
 }

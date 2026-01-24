@@ -1,0 +1,10 @@
+﻿# 忽略前端鏡像構建不需要的本地產物。
+.git
+node_modules
+dist
+.vite
+.DS_Store
+*.log
+*.local
+*.env
+*.env.*

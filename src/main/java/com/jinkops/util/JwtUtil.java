@@ -4,20 +4,34 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.util.Arrays;
 import java.util.Date;
 
 // JWT 工具類：生成與解析 Token
 @Component
 public class JwtUtil {
 
-    // 建議生產環境放設定檔或環境變數
-    private final Key secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    private final Key secretKey;
+    private final long expirationTime;
 
-    // Token 有效期 24 小時
-    private final long expirationTime = 24 * 60 * 60 * 1000;
+    public JwtUtil(
+            @Value("${app.security.jwt.secret}") String secret,
+            @Value("${app.security.jwt.expiration:86400000}") long expirationTime
+    ) {
+        this.secretKey = buildKey(secret);
+        this.expirationTime = expirationTime;
+    }
+
+    private Key buildKey(String secret) {
+        byte[] raw = secret == null ? new byte[0] : secret.getBytes(StandardCharsets.UTF_8);
+        byte[] keyBytes = Arrays.copyOf(raw, Math.max(32, raw.length));
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
 
     // 生成 Token
     public String generateToken(String username) {
@@ -27,7 +41,7 @@ public class JwtUtil {
                 .setSubject(username)
                 .setIssuedAt(now)
                 .setExpiration(expiry)
-                .signWith(secretKey)
+                .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
     }
 
@@ -49,7 +63,7 @@ public class JwtUtil {
         }
     }
 
-    // JwtAuthenticationFilter 需要的方法：提取用戶名
+    // JwtAuthenticationFilter 需要：取得使用者名稱
     public String extractUsername(String token) {
         try {
             return parseToken(token).getSubject();
@@ -58,7 +72,7 @@ public class JwtUtil {
         }
     }
 
-    // JwtAuthenticationFilter 需要的方法：驗證 Token
+    // JwtAuthenticationFilter 需要：驗證 Token
     public boolean validateToken(String token, org.springframework.security.core.userdetails.UserDetails userDetails) {
         try {
             String username = extractUsername(token);

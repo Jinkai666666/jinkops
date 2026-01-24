@@ -3,40 +3,41 @@ package com.jinkops.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jinkops.cache.key.UserKeys;
 import com.jinkops.cache.service.CacheService;
+import com.jinkops.cache.service.PermissionCache;
+import com.jinkops.entity.user.Role;
 import com.jinkops.entity.user.User;
 import com.jinkops.exception.BizException;
 import com.jinkops.exception.ErrorCode;
+import com.jinkops.repository.RoleRepository;
 import com.jinkops.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
-
-    @Autowired
-    private CacheService cacheService;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private RedissonClient redissonClient;
+    private final CacheService cacheService;
+    private final ObjectMapper objectMapper;
+    private final PasswordEncoder passwordEncoder;
+    private final RedissonClient redissonClient;
+    private final PermissionCache permissionCache;
+    private final RoleRepository roleRepository;
 
     // 隨機 TTL，避免大量快取同時過期
     private int randomTtl() {
@@ -44,10 +45,6 @@ public class UserService {
     }
 
     // 注入 repository
-    public UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
-
     // 後台列表入口，直接走資料庫
     public List<User> getAllUsers() {
         long start = System.currentTimeMillis();
@@ -113,11 +110,16 @@ public class UserService {
     }
 
     // 新增用戶時做密碼加密
+    @Transactional
     public User addUser(User user) {
         long start = System.currentTimeMillis();
         log.info("[SERVICE] addUser start keyParams=username={}", user.getUsername());
         try {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
+            Role defaultRole = roleRepository.findByCodeIgnoreCase("USER");
+            if (defaultRole != null) {
+                user.setRoles(Set.of(defaultRole));
+            }
             User saved = userRepository.save(user);
             long cost = System.currentTimeMillis() - start;
             log.info("[SERVICE] addUser success cost={}ms keyResult=userId={}", cost, saved.getId());
@@ -129,6 +131,7 @@ public class UserService {
     }
 
     // 刪除後順便清理分頁快取
+    @Transactional
     public void deleteUser(String username) {
         long start = System.currentTimeMillis();
         log.info("[SERVICE] deleteUser start keyParams=username={}", username);
@@ -140,6 +143,7 @@ public class UserService {
             }
             cacheService.deleteByPrefix("user:list:page:");
             userRepository.delete(user);
+            permissionCache.delete(username);
             long cost = System.currentTimeMillis() - start;
             log.info("[SERVICE] deleteUser success cost={}ms keyResult=ok", cost);
         } catch (Exception e) {
@@ -191,6 +195,7 @@ public class UserService {
     }
 
     // 更新後要清理對應快取與分頁快取
+    @Transactional
     public User updateUser(User user) {
         long start = System.currentTimeMillis();
         log.info("[SERVICE] updateUser start keyParams=username={}", user.getUsername());
@@ -228,12 +233,12 @@ public class UserService {
 
             if (json != null) {
                 try {
-                    // 快取命中直接包成 Page
-                    List<User> list = objectMapper.readValue(
-                            json,
-                            objectMapper.getTypeFactory().constructCollectionType(List.class, User.class)
+                    CachedPage cached = objectMapper.readValue(json, CachedPage.class);
+                    Page<User> result = new PageImpl<>(
+                            cached.getContent(),
+                            PageRequest.of(page - 1, size),
+                            cached.getTotal()
                     );
-                    Page<User> result = new PageImpl<>(list);
                     long cost = System.currentTimeMillis() - start;
                     log.info("[SERVICE] pageUsers success cost={}ms keyResult=total={}",
                             cost, result.getTotalElements());
@@ -246,8 +251,10 @@ public class UserService {
             Page<User> pageData = userRepository.findAll(pr);
 
             try {
-                // 只快取列表內容
-                String listJson = objectMapper.writeValueAsString(pageData.getContent());
+                CachedPage cached = new CachedPage();
+                cached.setContent(pageData.getContent());
+                cached.setTotal(pageData.getTotalElements());
+                String listJson = objectMapper.writeValueAsString(cached);
                 cacheService.set(key, listJson, randomTtl());
             } catch (Exception ignored) {
             }
@@ -263,6 +270,7 @@ public class UserService {
     }
 
     // 這裡用分散式鎖，避免併發建立同名用戶
+    @Transactional
     public User createUser(User user) {
         long start = System.currentTimeMillis();
         log.info("[SERVICE] createUser start keyParams=username={}", user.getUsername());
@@ -272,8 +280,10 @@ public class UserService {
         RLock lock = redissonClient.getLock(lockKey);
 
         try {
-            // 不給 TTL，交給 Watchdog
-            lock.lock();
+            boolean locked = lock.tryLock(5, 15, TimeUnit.SECONDS);
+            if (!locked) {
+                throw new BizException(ErrorCode.REPEAT_SUBMIT, "請稍後重試");
+            }
 
             User exist = userRepository.findByUsername(username);
             if (exist != null) {
@@ -289,6 +299,10 @@ public class UserService {
             log.info("[SERVICE] createUser success cost={}ms keyResult=userId={}", cost, saved.getId());
             return saved;
 
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("[SERVICE] createUser interrupted reason={}", e.getMessage(), e);
+            throw new BizException(ErrorCode.REPEAT_SUBMIT, "請稍後重試");
         } catch (Exception e) {
             log.error("[SERVICE] createUser failed reason={}", e.getMessage(), e);
             throw e;
@@ -297,6 +311,28 @@ public class UserService {
                 // 只解自己持有的鎖
                 lock.unlock();
             }
+        }
+    }
+
+    // 用於序列化分頁快取
+    private static class CachedPage {
+        private List<User> content;
+        private long total;
+
+        public List<User> getContent() {
+            return content;
+        }
+
+        public void setContent(List<User> content) {
+            this.content = content;
+        }
+
+        public long getTotal() {
+            return total;
+        }
+
+        public void setTotal(long total) {
+            this.total = total;
         }
     }
 }

@@ -6,8 +6,8 @@ export function listUsers() {
   return apiGet<User[]>(API_ENDPOINTS.users.base);
 }
 
-export function getUserByUsername(username: string) {
-  return apiGet<User>(`${API_ENDPOINTS.users.base}/${encodeURIComponent(username)}`);
+export function getUserByUsername(username: string, config?: import('axios').AxiosRequestConfig) {
+  return apiGet<User>(`${API_ENDPOINTS.users.base}/${encodeURIComponent(username)}`, config);
 }
 
 export function createUser(user: Partial<User>) {

@@ -9,11 +9,7 @@ import { useAuthStore } from '../store/auth';
 
 const loading = ref(false);
 const users = ref<User[]>([]);
-const pagination = reactive({
-  page: 1,
-  size: 10,
-  total: 0
-});
+const pagination = reactive({ page: 1, size: 10, total: 0 });
 
 const searchKey = ref('');
 let searchTimer: number | undefined;
@@ -53,7 +49,7 @@ const fetchRoles = async () => {
   try {
     roleOptions.value = await listRoles();
   } catch (e: any) {
-    if (e?.status === 403) ElMessage.error('无权限');
+    if (e?.status === 403) ElMessage.error('無權限');
   }
 };
 
@@ -77,7 +73,7 @@ const fetchUsers = async () => {
       pagination.page = 1;
     }
   } catch (e: any) {
-    if (e?.status === 403) ElMessage.error('无权限');
+    if (e?.status === 403) ElMessage.error('無權限');
   } finally {
     loading.value = false;
   }
@@ -99,7 +95,7 @@ const handleSearch = async () => {
     users.value = user ? [user] : [];
     pagination.total = user ? 1 : 0;
   } catch (e: any) {
-    if (e?.status === 403) ElMessage.error('无权限');
+    if (e?.status === 403) ElMessage.error('無權限');
   } finally {
     loading.value = false;
   }
@@ -115,39 +111,39 @@ const onSearchInput = (val: string) => {
 
 const handleCreate = async () => {
   if (!createForm.username || !createForm.password) {
-    ElMessage.warning('用户名和密码必填');
+    ElMessage.warning('請填寫帳號與密碼');
     return;
   }
   try {
     await createUser({ ...createForm });
-    ElMessage.success('创建成功');
+    ElMessage.success('建立成功');
     createDialog.value = false;
     Object.assign(createForm, { username: '', password: '', email: '' });
     fetchUsers();
   } catch (e: any) {
-    if (e?.status === 403) ElMessage.error('无权限');
+    if (e?.status === 403) ElMessage.error('無權限');
   }
 };
 
 const handleRegister = async () => {
   if (!registerForm.username || !registerForm.password) {
-    ElMessage.warning('用户名和密码必填');
+    ElMessage.warning('請填寫帳號與密碼');
     return;
   }
   try {
     await registerUser({ ...registerForm });
-    ElMessage.success('后台注册成功');
+    ElMessage.success('註冊成功');
     registerDialog.value = false;
     Object.assign(registerForm, { username: '', password: '', email: '' });
     fetchUsers();
   } catch (e: any) {
-    if (e?.status === 403) ElMessage.error('无权限');
+    if (e?.status === 403) ElMessage.error('無權限');
   }
 };
 
 const openEdit = (user: User) => {
   if (!isAdmin.value) {
-    ElMessage.warning('仅可查看自身信息');
+    ElMessage.warning('僅可查看自己的資料');
     return;
   }
   editForm.username = user.username;
@@ -158,37 +154,40 @@ const openEdit = (user: User) => {
 
 const handleEdit = async () => {
   if (!editForm.username) {
-    ElMessage.warning('用户名必填');
+    ElMessage.warning('請填寫帳號');
     return;
   }
   try {
     await updateUser({ ...editForm });
     ElMessage.success('更新成功');
     editDialog.value = false;
+    if (editForm.username === selfUsername.value) {
+      await auth.bootstrap(true);
+    }
     fetchUsers();
   } catch (e: any) {
-    if (e?.status === 403) ElMessage.error('无权限');
+    if (e?.status === 403) ElMessage.error('無權限');
   }
 };
 
 const handleDelete = async (user: User) => {
   if (!isAdmin.value) {
-    ElMessage.warning('仅 admin 可删除用户');
+    ElMessage.warning('僅 admin 可刪除用戶');
     return;
   }
-  await ElMessageBox.confirm(`确认删除用户 ${user.username} ?`, '删除用户', { type: 'warning' });
+  await ElMessageBox.confirm(`刪除用戶 ${user.username} ?`, '刪除用戶', { type: 'warning' });
   try {
     await deleteUser(user.username);
-    ElMessage.success('已删除');
+    ElMessage.success('已刪除');
     fetchUsers();
   } catch (e: any) {
-    if (e?.status === 403) ElMessage.error('无权限');
+    if (e?.status === 403) ElMessage.error('無權限');
   }
 };
 
 const openAssign = (user: User) => {
   if (!isAdmin.value) {
-    ElMessage.error('无权限执行该操作');
+    ElMessage.error('無權限進行此操作');
     return;
   }
   selectedUser.value = user;
@@ -198,7 +197,7 @@ const openAssign = (user: User) => {
 
 const handleAssign = async () => {
   if (!isAdmin.value) {
-    ElMessage.error('无权限执行该操作');
+    ElMessage.error('無權限進行此操作');
     return;
   }
   if (!selectedUser.value) return;
@@ -206,9 +205,12 @@ const handleAssign = async () => {
     await assignUserRoles({ userId: selectedUser.value.id, roleIds: selectedRoleIds.value });
     ElMessage.success('角色已更新');
     assignDialog.value = false;
+    if (selectedUser.value.username === selfUsername.value) {
+      await auth.bootstrap(true);
+    }
     fetchUsers();
   } catch (e: any) {
-    if (e?.status === 403) ElMessage.error('无权限执行该操作');
+    if (e?.status === 403) ElMessage.error('無權限');
   }
 };
 
@@ -232,30 +234,30 @@ onMounted(() => {
   <div class="users-view page">
     <div class="hero glass-card">
       <div>
-        <p class="eyebrow">用户管理</p>
-        <h2>用户列表 / 创建 / 注册 / 更新 / 删除 / 分配角色</h2>
-        <p class="muted">已覆盖：/api/users CRUD、/api/users/page、/api/users/{username}、/api/users/register、/api/rbac/user-role/assign</p>
+        <p class="eyebrow">用戶管理</p>
+        <h2>列表 / 建立 / 註冊 / 更新 / 刪除 / 分配角色</h2>
+        <p class="muted">已涵蓋：/api/users CRUD、/api/users/page、/api/users/{username}、/api/users/register、/api/rbac/user-role/assign</p>
       </div>
       <div class="actions">
         <el-input
-          :placeholder="isAdmin ? '按用户名搜索' : '仅可查看自身信息'"
+          :placeholder="isAdmin ? '輸入帳號查詢' : '僅可查看自己的資料'"
           clearable
           :disabled="!isAdmin"
           @input="onSearchInput"
           style="width: 220px"
         />
-        <el-button type="primary" v-permission="'SYS:USER:CREATE'" @click="createDialog = true">新增用户</el-button>
-        <el-button v-permission="'SYS:USER:CREATE'" @click="registerDialog = true">后台注册</el-button>
+        <el-button type="primary" v-permission="'SYS:USER:CREATE'" @click="createDialog = true">新增用戶</el-button>
+        <el-button v-permission="'SYS:USER:CREATE'" @click="registerDialog = true">後台註冊</el-button>
       </div>
     </div>
 
-    <el-alert v-if="!isAdmin" type="info" show-icon title="仅可查看自身信息" class="notice" />
+    <el-alert v-if="!isAdmin" type="info" show-icon title="僅可查看自己的資料" class="notice" />
 
     <div class="glass-card table-card">
       <el-table :data="users" stripe v-loading="loading" height="520">
         <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="username" label="用户名" width="160" />
-        <el-table-column prop="email" label="邮箱" />
+        <el-table-column prop="username" label="帳號" width="160" />
+        <el-table-column prop="email" label="Email" />
         <el-table-column label="角色" width="200">
           <template #default="{ row }">
             <el-tag v-for="r in row.roles" :key="r.id" size="small" type="success" style="margin: 2px">
@@ -267,13 +269,13 @@ onMounted(() => {
           <template #default="{ row }">
             <el-space>
               <el-button size="small" text type="primary" v-permission="'SYS:USER:UPDATE'" @click="openEdit(row)">
-                编辑
+                編輯
               </el-button>
               <el-button size="small" text type="warning" v-permission="'SYS:RBAC:ASSIGN'" @click="openAssign(row)">
                 分配角色
               </el-button>
               <el-button size="small" text type="danger" v-permission="'SYS:USER:DELETE'" @click="handleDelete(row)">
-                删除
+                刪除
               </el-button>
             </el-space>
           </template>
@@ -294,74 +296,74 @@ onMounted(() => {
     </div>
 
     <!-- 新增 -->
-    <el-dialog v-model="createDialog" title="新增用户 (POST /api/users)" width="420px">
+    <el-dialog v-model="createDialog" title="新增用戶 (POST /api/users)" width="420px">
       <el-form label-width="80px">
-        <el-form-item label="用户名">
+        <el-form-item label="帳號">
           <el-input v-model="createForm.username" />
         </el-form-item>
-        <el-form-item label="密码">
+        <el-form-item label="密碼">
           <el-input v-model="createForm.password" type="password" />
         </el-form-item>
-        <el-form-item label="邮箱">
+        <el-form-item label="Email">
           <el-input v-model="createForm.email" />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="createDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleCreate">创建</el-button>
+        <el-button type="primary" @click="handleCreate">建立</el-button>
       </template>
     </el-dialog>
 
-    <!-- 后台注册 -->
-    <el-dialog v-model="registerDialog" title="后台注册 (POST /api/users/register)" width="420px">
+    <!-- 後台註冊 -->
+    <el-dialog v-model="registerDialog" title="後台註冊 (POST /api/users/register)" width="420px">
       <el-form label-width="80px">
-        <el-form-item label="用户名">
+        <el-form-item label="帳號">
           <el-input v-model="registerForm.username" />
         </el-form-item>
-        <el-form-item label="密码">
+        <el-form-item label="密碼">
           <el-input v-model="registerForm.password" type="password" />
         </el-form-item>
-        <el-form-item label="邮箱">
+        <el-form-item label="Email">
           <el-input v-model="registerForm.email" />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="registerDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleRegister">注册</el-button>
+        <el-button type="primary" @click="handleRegister">註冊</el-button>
       </template>
     </el-dialog>
 
-    <!-- 编辑 -->
-    <el-dialog v-model="editDialog" title="编辑用户 (PUT /api/users)" width="420px">
+    <!-- 編輯 -->
+    <el-dialog v-model="editDialog" title="編輯用戶 (PUT /api/users)" width="420px">
       <el-form label-width="80px">
-        <el-form-item label="用户名">
+        <el-form-item label="帳號">
           <el-input v-model="editForm.username" disabled />
         </el-form-item>
-        <el-form-item label="新密码">
-          <el-input v-model="editForm.password" type="password" placeholder="不改可留空" />
+        <el-form-item label="新密碼">
+          <el-input v-model="editForm.password" type="password" placeholder="留空則不變" />
         </el-form-item>
-        <el-form-item label="邮箱">
+        <el-form-item label="Email">
           <el-input v-model="editForm.email" />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="editDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleEdit">保存</el-button>
+        <el-button type="primary" @click="handleEdit">儲存</el-button>
       </template>
     </el-dialog>
 
     <!-- 分配角色 -->
     <el-dialog v-model="assignDialog" title="分配角色 (POST /api/rbac/user-role/assign)" width="420px">
-      <p class="muted">需要权限：sys:rbac:assign</p>
+      <p class="muted">需要 sys:rbac:assign 權限</p>
       <template v-if="isAdmin">
-        <el-select v-model="selectedRoleIds" multiple filterable placeholder="选择角色" style="width: 100%">
+        <el-select v-model="selectedRoleIds" multiple filterable placeholder="選擇角色" style="width: 100%">
           <el-option v-for="r in roleOptions" :key="r.id" :label="r.code" :value="r.id" />
         </el-select>
       </template>
-      <p v-else class="muted">仅 admin 可分配角色</p>
+      <p v-else class="muted">僅 admin 可分配角色</p>
       <template #footer>
         <el-button @click="assignDialog = false">取消</el-button>
-        <el-button type="primary" :disabled="!isAdmin" @click="handleAssign">保存</el-button>
+        <el-button type="primary" :disabled="!isAdmin" @click="handleAssign">儲存</el-button>
       </template>
     </el-dialog>
   </div>

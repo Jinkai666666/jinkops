@@ -9,6 +9,9 @@ build/
 out/
 logs/
 *.log
+*.tar
+*.tar.gz
+*.tgz
 
 ### IntelliJ IDEA ###
 .idea/

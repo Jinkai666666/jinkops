@@ -11,16 +11,19 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.MDC;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.UUID;
 
 /**
- * 只記錄業務審計行為，避免和執行日誌混在一起
+ * 只记录读日志场景，避免和业务日志混在一起
  */
 @Aspect
 @Component
@@ -32,7 +35,7 @@ public class OperationLogAspect {
     private final EventLogService eventLogService;
 
     /**
-     * 攔截寫操作用的審計註解
+     * 拦截带注解的方法
      */
     @Around("@annotation(com.jinkops.annotation.OperationLog)")
     public Object recordLog(ProceedingJoinPoint joinPoint) throws Throwable {
@@ -48,14 +51,18 @@ public class OperationLogAspect {
         String desc = operationLog != null ? operationLog.value() : "";
 
         String traceId = MDC.get("traceId");
-        boolean traceAdded = false;
         if (traceId == null || traceId.isBlank()) {
-            traceId = UUID.randomUUID().toString();
-            MDC.put("traceId", traceId);
-            traceAdded = true;
+            traceId = "N/A";
         }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication != null ? authentication.getName() : "anonymous";
 
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        ServletRequestAttributes attrs =
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        HttpServletRequest request = attrs != null ? attrs.getRequest() : null;
+        String uri = request != null ? request.getRequestURI() : "";
+        String httpMethod = request != null ? request.getMethod() : "";
+        String ip = request != null ? request.getRemoteAddr() : "";
 
         try {
             Object result = joinPoint.proceed();
@@ -75,6 +82,9 @@ public class OperationLogAspect {
             entity.setDescription(desc);
             entity.setElapsedTime(time);
             entity.setCreateTime(LocalDateTime.now());
+            entity.setUri(uri);
+            entity.setHttpMethod(httpMethod);
+            entity.setIp(ip);
             repository.save(entity);
             eventLogService.sendOperationLog(entity);
             return result;
@@ -88,14 +98,17 @@ public class OperationLogAspect {
             try {
                 OperationLogEntity entity = new OperationLogEntity();
                 entity.setUsername(username);
-                entity.setOperation(desc + " (異常)");
+                entity.setOperation(desc + " (异常)");
                 entity.setTraceId(traceId);
                 entity.setClassName(className);
                 entity.setMethodName(methodName);
                 entity.setArgs(args);
-                entity.setDescription(desc + " (異常)");
+                entity.setDescription(desc + " (异常)");
                 entity.setElapsedTime(time);
                 entity.setCreateTime(LocalDateTime.now());
+                entity.setUri(uri);
+                entity.setHttpMethod(httpMethod);
+                entity.setIp(ip);
 
                 repository.save(entity);
                 eventLogService.sendOperationLog(entity);
@@ -104,10 +117,6 @@ public class OperationLogAspect {
             }
 
             throw e;
-        } finally {
-            if (traceAdded) {
-                MDC.remove("traceId");
-            }
         }
     }
 }

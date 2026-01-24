@@ -120,27 +120,26 @@ Login → User 操作 → RBAC 綁定 → OperationLog 查詢
 - RabbitMQ
 - Elasticsearch
 
-### 設定說明
+### 設定說明（Profiles）
 
-`application.yml` 需設定以下項目：
-
-- MySQL 連線資訊（url / username / password）
-- Redis 連線資訊（host / port / password）
-- RabbitMQ 連線資訊（host / port / username / password）
-- Elasticsearch 連線設定
-- JWT 金鑰與過期時間（如放在設定檔）
+- 共用設定：`src/main/resources/application.yml`
+- 開發：`application-dev.yml`（預設啟用，可用 `--spring.profiles.active=dev` 覆寫）
+- 生產：`application-prod.yml`
+- 需透過環境變數或 `.env` 提供：
+  - `DB_URL` / `DB_USERNAME` / `DB_PASSWORD`
+  - `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD`（可選）
+  - `RABBIT_HOST` / `RABBIT_PORT` / `RABBIT_USER` / `RABBIT_PASSWORD`
+  - `ELASTICSEARCH_HOST` / `ELASTICSEARCH_PORT`
+  - `APP_JWT_SECRET`（至少 32 字元，與 `APP_JWT_EXPIRATION` 可共同控制 token）
 
 ### 啟動方式
 
 使用 Maven：
 
-mvn clean install
-mvn spring-boot:run
+- 開發：`mvn spring-boot:run -Dspring-boot.run.profiles=dev`
+- 生產：`java -jar app.jar --spring.profiles.active=prod`
 
-yaml
-复制代码
-
-或於 IDE 中載入 Maven 專案後直接啟動 `JinkOpsApplication`。
+或於 IDE 中載入 Maven 專案後直接啟動 `JinkOpsApplication`，並在 VM options 指定 `-Dspring.profiles.active=dev` / `prod`。
 
 ---
 

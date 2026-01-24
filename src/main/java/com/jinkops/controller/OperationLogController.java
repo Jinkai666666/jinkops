@@ -1,5 +1,6 @@
 package com.jinkops.controller;
 
+import com.jinkops.annotation.RequirePermission;
 import com.jinkops.entity.log.OperationLogEntity;
 import com.jinkops.service.OperationLogService;
 import com.jinkops.vo.ApiResponse;
@@ -31,6 +32,7 @@ public class OperationLogController {
 
     // 分頁查詢操作日誌
     @Operation(summary = "分頁查詢操作日誌（按時間倒序）")
+    @RequirePermission("sys:log:query")
     @GetMapping
     public ApiResponse<Page<OperationLogEntity>> getLogs(Pageable pageable) {
         log.info("[API] GET /api/logs");
@@ -39,6 +41,7 @@ public class OperationLogController {
 
     @Operation(summary = "模糊搜尋日誌（按時間倒序）")
     // 模糊搜尋日誌
+    @RequirePermission("sys:log:query")
     @GetMapping("/search")
     public ApiResponse<Page<OperationLogEntity>> searchLogs(
             @RequestParam(required = false) String keyword,
@@ -49,6 +52,7 @@ public class OperationLogController {
     }
 
     @Operation(summary = "日誌統一分頁查詢（keyword + 時間區間 + 分頁）")
+    @RequirePermission("sys:log:query")
     @PostMapping("/page")
     public ApiResponse<Page<OperationLogEntity>> page(@RequestBody LogQueryRequest req) {
         log.info("[API] POST /api/logs/page");
@@ -58,6 +62,7 @@ public class OperationLogController {
     /**
      * 日誌搜尋（含降級查詢）
      */
+    @RequirePermission("sys:log:query")
     @GetMapping("/search/advanced")
     public ApiResponse<List<OperationLogEntity>> search(
             @RequestParam(required = false) String keyword,

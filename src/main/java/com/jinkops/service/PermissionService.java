@@ -1,5 +1,6 @@
 package com.jinkops.service;
 
+import com.jinkops.cache.service.PermissionCache;
 import com.jinkops.entity.user.Permission;
 import com.jinkops.exception.BizException;
 import com.jinkops.exception.ErrorCode;
@@ -7,6 +8,7 @@ import com.jinkops.repository.PermissionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -16,6 +18,7 @@ import java.util.List;
 public class PermissionService {
 
     private final PermissionRepository permissionRepository;
+    private final PermissionCache permissionCache;
 
     // 權限管理列表
     public List<Permission> list() {
@@ -33,6 +36,7 @@ public class PermissionService {
     }
 
     // 建一個新權限
+    @Transactional
     public Permission create(String code) {
         long start = System.currentTimeMillis();
         log.info("[SERVICE] createPermission start keyParams=code={}", code);
@@ -40,6 +44,7 @@ public class PermissionService {
             Permission permission = new Permission();
             permission.setCode(code);
             Permission saved = permissionRepository.save(permission);
+            permissionCache.deleteAll();
             long cost = System.currentTimeMillis() - start;
             log.info("[SERVICE] createPermission success cost={}ms keyResult=permissionId={}", cost, saved.getId());
             return saved;
@@ -50,6 +55,7 @@ public class PermissionService {
     }
 
     // 刪除權限
+    @Transactional
     public void delete(Long id) {
         long start = System.currentTimeMillis();
         log.info("[SERVICE] deletePermission start keyParams=id={}", id);
@@ -57,6 +63,7 @@ public class PermissionService {
             Permission permission = permissionRepository.findById(id)
                     .orElseThrow(() -> new BizException(ErrorCode.PERMISSION_NOT_FOUND));
             permissionRepository.delete(permission);
+            permissionCache.deleteAll();
             long cost = System.currentTimeMillis() - start;
             log.info("[SERVICE] deletePermission success cost={}ms keyResult=ok", cost);
         } catch (Exception e) {

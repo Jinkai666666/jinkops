@@ -30,15 +30,16 @@ public class AuthController {
         log.info("[API] POST /api/auth/register");
         return ApiResponse.success(userService.createUser(user));
     }
-    // 登录接口
+
+    // 登入介面
     @OperationLog
     @PostMapping("/login")
     public ApiResponse<LoginResponse> login(@RequestBody User user) {
         log.info("[API] POST /api/auth/login");
-        return ApiResponse.success("登录成功", authService.login(user));
+        return ApiResponse.success("登入成功", authService.login(user));
     }
 
-    // 校验 Token
+    // 驗證 Token
     @GetMapping("/verify")
     public ApiResponse<String> verify(@RequestParam String token) {
         log.info("[API] GET /api/auth/verify");

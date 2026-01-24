@@ -1,0 +1,14 @@
+﻿# 減少 Docker 構建上下文體積，只保留必要文件。
+.git
+.idea
+.vscode
+*.iml
+target
+logs
+*.log
+node_modules
+frontend/node_modules
+frontend/dist
+frontend/.vite
+*.env
+*.env.*

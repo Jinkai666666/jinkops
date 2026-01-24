@@ -1,6 +1,7 @@
 package com.jinkops.controller;
 
 import com.jinkops.annotation.OperationLog;
+import com.jinkops.annotation.RequirePermission;
 import com.jinkops.entity.user.User;
 import com.jinkops.service.UserService;
 import com.jinkops.vo.ApiResponse;
@@ -30,6 +31,7 @@ public class UserController {
     }
 
     // 查詢全部用戶
+    @RequirePermission("sys:user:list")
     @GetMapping
     public ApiResponse<List<User>> getAllUsers() {
         log.info("[API] GET /api/users");
@@ -37,6 +39,7 @@ public class UserController {
     }
 
     // 根據用戶名查詢（自動帶快取）
+    @RequirePermission("sys:user:list")
     @GetMapping("/{username}")
     public ApiResponse<User> getUserByUsername(@PathVariable String username) {
         log.info("[API] GET /api/users/{username}");
@@ -45,6 +48,7 @@ public class UserController {
 
     // 新增用戶
     @OperationLog("新增用戶")
+    @RequirePermission("sys:user:update")
     @PostMapping
     public ApiResponse<User> addUser(@RequestBody User user) {
         log.info("[API] POST /api/users");
@@ -62,6 +66,7 @@ public class UserController {
 
     // 刪除用戶
     @OperationLog("刪除用戶")
+    @RequirePermission("sys:user:update")
     @DeleteMapping("/{username}")
     public ApiResponse<String> deleteUser(@PathVariable String username) {
         log.info("[API] DELETE /api/users/{username}");
@@ -71,6 +76,7 @@ public class UserController {
 
     // 更新用戶
     @OperationLog("更新用戶")
+    @RequirePermission("sys:user:update")
     @PutMapping
     public ApiResponse<User> updateUser(@RequestBody User user) {
         log.info("[API] PUT /api/users");
@@ -78,6 +84,7 @@ public class UserController {
     }
 
     // 分頁用戶查詢（帶快取）
+    @RequirePermission("sys:user:list")
     @GetMapping("/page")
     public ApiResponse<Page<User>> page(
             @RequestParam(defaultValue = "1") int page,

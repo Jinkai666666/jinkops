@@ -1,9 +1,11 @@
 package com.jinkops.aspect;
 
 import com.jinkops.annotation.RequirePermission;
+import com.jinkops.cache.service.PermissionCache;
 import com.jinkops.enums.PermissionMode;
 import com.jinkops.exception.BizException;
 import com.jinkops.exception.ErrorCode;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
@@ -16,6 +18,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -23,7 +26,10 @@ import java.util.stream.Collectors;
 @Aspect
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class PermissionAspect {
+
+    private final PermissionCache permissionCache;
 
     // 攔截所有帶 @RequirePermission 的方法
     @Before("@annotation(requirePermission)")
@@ -42,16 +48,25 @@ public class PermissionAspect {
             throw new BizException(ErrorCode.UNAUTHORIZED);
         }
 
-        // 拿到用戶權限集
-        Set<String> userPerm = auth.getAuthorities()
-                .stream()
-                // 轉換成字串並統一大寫，避免大小寫不一致
-                .map(GrantedAuthority::getAuthority)
+        String username = auth.getName();
+
+        // 先走 Redis 權限快取
+        Set<String> userPerm = permissionCache.get(username);
+
+        if (userPerm == null || userPerm.isEmpty()) {
+            userPerm = auth.getAuthorities()
+                    .stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.toSet());
+        }
+
+        Set<String> normalizedPerm = userPerm.stream()
+                .filter(p -> p != null && !p.isBlank())
                 .map(String::toUpperCase)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toCollection(HashSet::new));
 
         // 超級管理員直接放行
-        if (userPerm.contains("ROLE_ADMIN")) {
+        if (normalizedPerm.contains("ROLE_ADMIN")) {
             return;
         }
 
@@ -60,12 +75,12 @@ public class PermissionAspect {
 
         if (mode == PermissionMode.AND) {
             // AND：全部權限都要有
-            allowed = userPerm.containsAll(Set.of(requiredPermissions));
+            allowed = normalizedPerm.containsAll(Set.of(requiredPermissions));
         } else {
             // OR：有一個就行
             allowed = false;
             for (String p : requiredPermissions) {
-                if (userPerm.contains(p)) {
+                if (normalizedPerm.contains(p)) {
                     allowed = true;
                     break;
                 }
@@ -76,7 +91,7 @@ public class PermissionAspect {
         if (!allowed) {
             ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             String uri = attrs != null && attrs.getRequest() != null ? attrs.getRequest().getRequestURI() : "unknown";
-            log.warn("Permission denied uri={} required={} granted={}", uri, Arrays.toString(requiredPermissions), userPerm);
+            log.warn("Permission denied uri={} required={} granted={}", uri, Arrays.toString(requiredPermissions), normalizedPerm);
             throw new BizException(ErrorCode.FORBIDDEN);
         }
     }

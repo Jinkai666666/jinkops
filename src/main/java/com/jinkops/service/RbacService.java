@@ -1,5 +1,6 @@
 package com.jinkops.service;
 
+import com.jinkops.cache.service.PermissionCache;
 import com.jinkops.entity.user.Permission;
 import com.jinkops.entity.user.Role;
 import com.jinkops.entity.user.User;
@@ -11,6 +12,7 @@ import com.jinkops.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
@@ -24,8 +26,10 @@ public class RbacService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
+    private final PermissionCache permissionCache;
 
     // 綁定用戶與角色，這裡只管關聯，不做其他業務
+    @Transactional
     public void assignUserRoles(Long userId, Set<Long> roleIds) {
         long start = System.currentTimeMillis();
         log.info("[SERVICE] assignUserRoles start keyParams=userId={},roleCount={}",
@@ -42,6 +46,7 @@ public class RbacService {
 
             user.setRoles(new HashSet<>(roles));
             userRepository.save(user);
+            permissionCache.delete(user.getUsername());
             long cost = System.currentTimeMillis() - start;
             log.info("[SERVICE] assignUserRoles success cost={}ms keyResult=ok", cost);
         } catch (Exception e) {
@@ -51,6 +56,7 @@ public class RbacService {
     }
 
     // 綁定角色與權限，保持最小管理能力
+    @Transactional
     public void assignRolePermissions(Long roleId, Set<Long> permissionIds) {
         long start = System.currentTimeMillis();
         log.info("[SERVICE] assignRolePermissions start keyParams=roleId={},permCount={}",
@@ -67,6 +73,7 @@ public class RbacService {
 
             role.setPermissions(new HashSet<>(perms));
             roleRepository.save(role);
+            permissionCache.deleteAll();
             long cost = System.currentTimeMillis() - start;
             log.info("[SERVICE] assignRolePermissions success cost={}ms keyResult=ok", cost);
         } catch (Exception e) {

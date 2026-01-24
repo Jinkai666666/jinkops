@@ -10,6 +10,7 @@ type Mode = 'page' | 'list' | 'search' | 'advanced';
 const loading = ref(false);
 const mode = ref<Mode>('page');
 const logs = ref<OperationLog[]>([]);
+const rawAdvanced = ref<OperationLog[]>([]);
 const query = reactive({
   keyword: '',
   range: [] as (Date | string)[],
@@ -18,15 +19,31 @@ const query = reactive({
   total: 0
 });
 
-let searchTimer: number | undefined;
-
 const tableData = computed(() => {
-  if (mode.value === 'advanced') {
+  if (mode.value === 'advanced' || mode.value === 'search') {
     const start = (query.page - 1) * query.size;
     return logs.value.slice(start, start + query.size);
   }
   return logs.value;
 });
+
+const normalize = (val: any) => (val === null || val === undefined ? '' : String(val));
+const matchKeyword = (row: OperationLog, keyword: string) => {
+  if (!keyword) return true;
+  const k = keyword.toLowerCase();
+  const fields = [
+    row.username,
+    row.operation,
+    row.description,
+    row.className,
+    row.methodName,
+    row.args,
+    row.traceId,
+    row.elapsedTime,
+    row.createTime
+  ];
+  return fields.some((f) => normalize(f).toLowerCase().includes(k));
+};
 
 const fetchLogs = async () => {
   loading.value = true;
@@ -39,35 +56,33 @@ const fetchLogs = async () => {
         body.endTime = formatLocal(query.range[1]);
       }
       const data = await pageLogs(body);
-      logs.value = data.content;
-      query.total = data.totalElements;
+      const filtered = query.keyword ? data.content.filter((r: any) => matchKeyword(r, query.keyword)) : data.content;
+      logs.value = filtered;
+      query.total = filtered.length;
       return;
     }
 
     if (mode.value === 'list') {
       const data = await getLogs(query.page - 1, query.size);
-      logs.value = data.content;
-      query.total = data.totalElements;
+      const filtered = query.keyword ? data.content.filter((r: any) => matchKeyword(r, query.keyword)) : data.content;
+      logs.value = filtered;
+      query.total = filtered.length;
       return;
     }
 
-    if (mode.value === 'search') {
-      const data = await searchLogs(query.keyword, query.page - 1, query.size);
-      logs.value = data.content;
-      query.total = data.totalElements;
-      return;
-    }
-
-    // advanced
+    // search & advanced 统一用高级接口拿全量再前端模糊过滤
     const params: Record<string, any> = {};
-    if (query.keyword) params.keyword = query.keyword;
     if (query.range.length === 2) {
       params.startTime = new Date(query.range[0]).getTime();
       params.endTime = new Date(query.range[1]).getTime();
     }
     const data = await advancedSearchLogs(params);
-    logs.value = data || [];
-    query.total = logs.value.length;
+    rawAdvanced.value = data || [];
+    const filtered = query.keyword
+      ? rawAdvanced.value.filter((r) => matchKeyword(r, query.keyword))
+      : rawAdvanced.value;
+    logs.value = filtered;
+    query.total = filtered.length;
     query.page = 1;
   } catch (e: any) {
     if (e?.status === 403) {
@@ -93,17 +108,11 @@ const resetFilters = () => {
   fetchLogs();
 };
 
-const handleSearchInput = (val: string) => {
-  if (searchTimer) window.clearTimeout(searchTimer);
-  searchTimer = window.setTimeout(() => {
-    query.keyword = val.trim();
-    query.page = 1;
-    fetchLogs();
-  }, 300);
-};
-
 const handlePageChange = (page: number) => {
   query.page = page;
+  if (mode.value === 'advanced' || mode.value === 'search') {
+    return; // 前端分页
+  }
   if (mode.value !== 'advanced') {
     fetchLogs();
   }
@@ -112,6 +121,9 @@ const handlePageChange = (page: number) => {
 const handleSizeChange = (size: number) => {
   query.size = size;
   query.page = 1;
+  if (mode.value === 'advanced' || mode.value === 'search') {
+    return; // 前端分页
+  }
   if (mode.value !== 'advanced') {
     fetchLogs();
   }
@@ -150,15 +162,15 @@ onMounted(fetchLogs);
     <div class="glass-card table-card">
       <div class="header">
         <div>
-          <p class="eyebrow">Operation Logs</p>
+          <p class="eyebrow">OPERATION LOGS</p>
           <h3>日志列表（{{ mode }}）</h3>
         </div>
         <div class="filters">
           <el-input
-            placeholder="关键词（用户 / 操作 / 描述）"
+            v-model="query.keyword"
+            placeholder="关键词（用户 / 操作 / 描述 / 定位 / 参数）"
             clearable
-            @input="handleSearchInput"
-            style="width: 240px"
+            style="width: 260px"
           />
           <el-date-picker
             v-model="query.range"
@@ -177,18 +189,19 @@ onMounted(fetchLogs);
         <el-table-column prop="username" label="用户" width="140" />
         <el-table-column prop="operation" label="操作" width="180" />
         <el-table-column prop="description" label="描述" width="200" />
-        <el-table-column prop="elapsedTime" label="耗时(ms)" width="100" />
-        <el-table-column label="参数" min-width="220">
+        <el-table-column prop="elapsedTime" label="耗时(ms)" width="110" />
+        <el-table-column label="参数" min-width="260">
           <template #default="{ row }">
-            <el-tooltip placement="top-start" effect="dark" :content="row.args">
+            <el-tooltip v-if="row.args" placement="top-start" effect="dark" :content="row.args">
               <span class="args">{{ row.args }}</span>
             </el-tooltip>
+            <span v-else class="muted">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="定位" min-width="200">
+        <el-table-column label="定位" min-width="240">
           <template #default="{ row }">
-            <div class="muted">{{ row.className }}#{{ row.methodName }}</div>
-            <div class="muted">traceId: {{ row.traceId }}</div>
+            <div class="muted">{{ row.className || '-' }}#{{ row.methodName || '-' }}</div>
+            <div class="muted">traceId: {{ row.traceId || '-' }}</div>
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="时间" width="180">
@@ -238,9 +251,17 @@ onMounted(fetchLogs);
 
 .mode-buttons {
   display: grid;
-  grid-template-columns: repeat(2, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 8px;
-  align-items: center;
+  align-items: stretch;
+}
+
+.mode-buttons :deep(.el-button) {
+  white-space: normal;
+  line-height: 1.3;
+  height: auto;
+  padding: 10px 12px;
+  text-align: left;
 }
 
 .header {

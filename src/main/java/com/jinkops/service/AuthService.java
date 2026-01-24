@@ -26,34 +26,36 @@ public class AuthService {
     private final PermissionCache permissionCache;
     private final JwtUtil jwtUtil;
 
-    // 登入流程，成功就回 token
+    // 登入流程：成功則回傳 token
     public LoginResponse login(User user) {
         long start = System.currentTimeMillis();
         log.info("[SERVICE] login start keyParams=username={}", user.getUsername());
         try {
-            // Security 認證帳號密碼
+            // 交給 Spring Security 驗證帳密
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             user.getUsername(),
                             user.getPassword())
             );
 
-            // 從 userdetails 獲取權限集合
+            // 從 userDetails 取出權限集合
             org.springframework.security.core.userdetails.User userDetails =
                     (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
 
-            // 權限轉成能用的字串 Set
+            // 權限轉成可用的字串 Set
             Set<String> perms = userDetails.getAuthorities().stream()
                     .map(a -> a.getAuthority())
+                    .filter(s -> s != null)
+                    .map(String::toUpperCase)
                     .collect(Collectors.toSet());
 
-            // 寫入 Redis
+            // 寫入 Redis 快取
             permissionCache.set(user.getUsername(), perms);
 
             // 生成 token
             String token = jwtUtil.generateToken(user.getUsername());
 
-            // 構建 LoginResponse
+            // 組裝 LoginResponse
             LoginResponse resp = new LoginResponse();
             resp.setToken(token);
             long cost = System.currentTimeMillis() - start;
@@ -66,7 +68,7 @@ public class AuthService {
         }
     }
 
-    // 只做驗證與解析，失敗就拋未登入
+    // 只做 JWT 解碼與校驗，不需要登入態
     public String verify(String token) {
         long start = System.currentTimeMillis();
         log.info("[SERVICE] verify start keyParams=token");

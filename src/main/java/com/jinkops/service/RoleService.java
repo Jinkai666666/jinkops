@@ -1,5 +1,6 @@
 package com.jinkops.service;
 
+import com.jinkops.cache.service.PermissionCache;
 import com.jinkops.entity.user.Role;
 import com.jinkops.exception.BizException;
 import com.jinkops.exception.ErrorCode;
@@ -7,6 +8,7 @@ import com.jinkops.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -16,6 +18,7 @@ import java.util.List;
 public class RoleService {
 
     private final RoleRepository roleRepository;
+    private final PermissionCache permissionCache;
 
     // 角色管理列表
     public List<Role> list() {
@@ -33,6 +36,7 @@ public class RoleService {
     }
 
     // 建一個新角色
+    @Transactional
     public Role create(String code) {
         long start = System.currentTimeMillis();
         log.info("[SERVICE] createRole start keyParams=code={}", code);
@@ -40,6 +44,7 @@ public class RoleService {
             Role role = new Role();
             role.setCode(code);
             Role saved = roleRepository.save(role);
+            permissionCache.deleteAll();
             long cost = System.currentTimeMillis() - start;
             log.info("[SERVICE] createRole success cost={}ms keyResult=roleId={}", cost, saved.getId());
             return saved;
@@ -50,6 +55,7 @@ public class RoleService {
     }
 
     // 更新角色基本資訊
+    @Transactional
     public Role update(Long id, String code) {
         long start = System.currentTimeMillis();
         log.info("[SERVICE] updateRole start keyParams=id={},code={}", id, code);
@@ -58,6 +64,7 @@ public class RoleService {
                     .orElseThrow(() -> new BizException(ErrorCode.ROLE_NOT_FOUND));
             role.setCode(code);
             Role saved = roleRepository.save(role);
+            permissionCache.deleteAll();
             long cost = System.currentTimeMillis() - start;
             log.info("[SERVICE] updateRole success cost={}ms keyResult=roleId={}", cost, saved.getId());
             return saved;
@@ -68,6 +75,7 @@ public class RoleService {
     }
 
     // 刪除角色
+    @Transactional
     public void delete(Long id) {
         long start = System.currentTimeMillis();
         log.info("[SERVICE] deleteRole start keyParams=id={}", id);
@@ -75,6 +83,7 @@ public class RoleService {
             Role role = roleRepository.findById(id)
                     .orElseThrow(() -> new BizException(ErrorCode.ROLE_NOT_FOUND));
             roleRepository.delete(role);
+            permissionCache.deleteAll();
             long cost = System.currentTimeMillis() - start;
             log.info("[SERVICE] deleteRole success cost={}ms keyResult=ok", cost);
         } catch (Exception e) {

@@ -63,9 +63,9 @@ router.beforeEach(async (to, from, next) => {
     return next('/login');
   }
 
-  if (auth.token && !auth.user && to.meta.requiresAuth) {
+  if (auth.token && to.meta.requiresAuth) {
     try {
-      await auth.bootstrap();
+      await auth.bootstrap(true); // 每次進入受保護頁都重新同步使用者與權限
     } catch (e) {
       auth.logout();
       return next('/login');

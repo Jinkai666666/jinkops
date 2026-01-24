@@ -57,6 +57,9 @@ public class RbacDataInitializer {
             Permission pRbacAssign = new Permission();
             pRbacAssign.setCode("sys:rbac:assign");
 
+            Permission pLogQuery = new Permission();
+            pLogQuery.setCode("sys:log:query");
+
             permRepo.save(p1);
             permRepo.save(p2);
             permRepo.save(pRoleList);
@@ -67,6 +70,7 @@ public class RbacDataInitializer {
             permRepo.save(pPermCreate);
             permRepo.save(pPermDelete);
             permRepo.save(pRbacAssign);
+            permRepo.save(pLogQuery);
 
             // 建立角色
             Role admin = new Role();
@@ -75,7 +79,8 @@ public class RbacDataInitializer {
                     p1, p2,
                     pRoleList, pRoleCreate, pRoleUpdate, pRoleDelete,
                     pPermList, pPermCreate, pPermDelete,
-                    pRbacAssign
+                    pRbacAssign,
+                    pLogQuery
             ));
 
             Role normal = new Role();

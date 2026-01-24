@@ -2,6 +2,8 @@ package com.jinkops.config;
 
 import com.jinkops.service.CustomUserDetailsService;
 import com.jinkops.web.security.JwtAuthenticationFilter;
+import com.jinkops.web.security.RestAccessDeniedHandler;
+import com.jinkops.web.security.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -18,8 +20,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-@EnableMethodSecurity // 讓 @RequirePermission 生效
-@Configuration // 設定類
+@EnableMethodSecurity // 啟用 @RequirePermission
+@Configuration // 標記為組態類
 @EnableWebSecurity
 @ComponentScan(basePackages = "com.jinkops")
 @RequiredArgsConstructor
@@ -27,6 +29,8 @@ public class SecurityConfig {
 
     private final CustomUserDetailsService customUserDetailsService;
     private final JwtAuthenticationFilter jwtFilter;
+    private final RestAuthenticationEntryPoint authenticationEntryPoint;
+    private final RestAccessDeniedHandler accessDeniedHandler;
 
     @Value("${app.security.enabled:true}")
     private boolean securityEnabled;
@@ -35,7 +39,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable());
         if (!securityEnabled) {
-            // 開發/內網場景可關閉安全
+            // 若關閉安全開關則全部放行
             http.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                     .formLogin(form -> form.disable())
                     .httpBasic(basic -> basic.disable());
@@ -52,12 +56,15 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/api-docs/**",
                                 "/webjars/**").permitAll()
-                        .requestMatchers("/api/logs/page").permitAll()
                         .anyRequest().authenticated()
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler)
                 )
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable());
-        // JWT 先於登入過濾器
+        // JWT 過濾器要放在登入過濾器之前
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -65,19 +72,19 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(); // 密碼加密器
+        return new BCryptPasswordEncoder(); // 密碼雜湊器
     }
 
-    // 註冊認證提供者（指定用戶查找邏輯 + 密碼校驗邏輯）
+    // 認證供應者：指定用戶查找與密碼驗證
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(customUserDetailsService); // 用 RBAC 的 UserDetailsService
+        provider.setUserDetailsService(customUserDetailsService); // RBAC 的 UserDetailsService
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }
 
-    // 暴露認證管理器（登入認證的總入口，讓 Controller 可以直接呼叫認證）
+    // 認證管理器：登入流程的統一入口
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
