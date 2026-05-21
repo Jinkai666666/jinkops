@@ -1,6 +1,7 @@
 package com.jinkops.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jinkops.audit.AuditContext;
 import com.jinkops.cache.key.UserKeys;
 import com.jinkops.cache.service.CacheService;
 import com.jinkops.cache.service.PermissionCache;
@@ -68,6 +69,8 @@ public class UserService {
             String key = UserKeys.userInfo(username);
             String json = cacheService.get(key);
             if ("null".equals(json)) {
+                // 命中空值快取，代表 Redis 幫我們擋掉一次 DB 查詢。
+                AuditContext.put("userRedis", "HIT_NULL");
                 // 空值快取命中，直接回
                 long cost = System.currentTimeMillis() - start;
                 log.info("[SERVICE] findByUsername success cost={}ms keyResult=not_found", cost);
@@ -76,6 +79,8 @@ public class UserService {
 
             if (json != null) {
                 try {
+                    // 命中使用者快取，這次不用查 DB。
+                    AuditContext.put("userRedis", "HIT");
                     // 快取命中直接反序列化
                     User cached = objectMapper.readValue(json, User.class);
                     long cost = System.currentTimeMillis() - start;
@@ -86,6 +91,8 @@ public class UserService {
             }
 
             // 快取沒有就回 DB
+            // 沒命中 Redis，下面就會走 DB，這個標記會被操作日誌帶出去。
+            AuditContext.put("userRedis", "MISS");
             User user = userRepository.findByUsername(username);
             if (user == null) {
                 // 空值快取防穿透
@@ -233,6 +240,8 @@ public class UserService {
 
             if (json != null) {
                 try {
+                    // 分頁列表命中 Redis，面試時可以直接從日誌看到。
+                    AuditContext.put("userPageRedis", "HIT");
                     CachedPage cached = objectMapper.readValue(json, CachedPage.class);
                     Page<User> result = new PageImpl<>(
                             cached.getContent(),
@@ -247,6 +256,8 @@ public class UserService {
                 }
             }
 
+            // 分頁快取沒中，這次從 DB 查，查完再回填 Redis。
+            AuditContext.put("userPageRedis", "MISS");
             PageRequest pr = PageRequest.of(page - 1, size);
             Page<User> pageData = userRepository.findAll(pr);
 
@@ -281,6 +292,8 @@ public class UserService {
 
         try {
             boolean locked = lock.tryLock(5, 15, TimeUnit.SECONDS);
+            // Redisson 鎖有沒有拿到也記一下，方便展示防重複提交。
+            AuditContext.put("redissonLock", locked ? "ACQUIRED" : "TIMEOUT");
             if (!locked) {
                 throw new BizException(ErrorCode.REPEAT_SUBMIT, "請稍後重試");
             }

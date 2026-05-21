@@ -1,5 +1,6 @@
 package com.jinkops.controller;
 
+import com.jinkops.annotation.OperationLog;
 import com.jinkops.annotation.RequirePermission;
 import com.jinkops.entity.log.OperationLogEntity;
 import com.jinkops.service.OperationLogService;
@@ -18,8 +19,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
 // 操作日誌控制器
 @Slf4j
 @Tag(name = "操作日誌介面", description = "提供日誌查詢與搜尋功能")
@@ -30,28 +29,8 @@ public class OperationLogController {
 
     private final OperationLogService operationLogService;
 
-    // 分頁查詢操作日誌
-    @Operation(summary = "分頁查詢操作日誌（按時間倒序）")
-    @RequirePermission("sys:log:query")
-    @GetMapping
-    public ApiResponse<Page<OperationLogEntity>> getLogs(Pageable pageable) {
-        log.info("[API] GET /api/logs");
-        return ApiResponse.success(operationLogService.getLogs(pageable));
-    }
-
-    @Operation(summary = "模糊搜尋日誌（按時間倒序）")
-    // 模糊搜尋日誌
-    @RequirePermission("sys:log:query")
-    @GetMapping("/search")
-    public ApiResponse<Page<OperationLogEntity>> searchLogs(
-            @RequestParam(required = false) String keyword,
-            Pageable pageable
-    ) {
-        log.info("[API] GET /api/logs/search");
-        return ApiResponse.success(operationLogService.searchLogs(keyword, pageable));
-    }
-
     @Operation(summary = "日誌統一分頁查詢（keyword + 時間區間 + 分頁）")
+    @OperationLog("分页查询操作日志")
     @RequirePermission("sys:log:query")
     @PostMapping("/page")
     public ApiResponse<Page<OperationLogEntity>> page(@RequestBody LogQueryRequest req) {
@@ -59,17 +38,18 @@ public class OperationLogController {
         return ApiResponse.success(operationLogService.page(req));
     }
 
-    /**
-     * 日誌搜尋（含降級查詢）
-     */
+    @Operation(summary = "進階查詢：優先 ES，無結果則降級 DB 並寫入 ES")
+    @OperationLog("高级搜索操作日志")
     @RequirePermission("sys:log:query")
     @GetMapping("/search/advanced")
-    public ApiResponse<List<OperationLogEntity>> search(
+    public ApiResponse<Page<OperationLogEntity>> advancedSearch(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long startTime,
-            @RequestParam(required = false) Long endTime
+            @RequestParam(required = false) Long endTime,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
     ) {
         log.info("[API] GET /api/logs/search/advanced");
-        return ApiResponse.success(operationLogService.searchEs(keyword, startTime, endTime));
+        return ApiResponse.success(operationLogService.searchEs(keyword, startTime, endTime, page, size));
     }
 }

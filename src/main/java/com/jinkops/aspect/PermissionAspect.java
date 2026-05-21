@@ -1,6 +1,7 @@
 package com.jinkops.aspect;
 
 import com.jinkops.annotation.RequirePermission;
+import com.jinkops.audit.AuditContext;
 import com.jinkops.cache.service.PermissionCache;
 import com.jinkops.enums.PermissionMode;
 import com.jinkops.exception.BizException;
@@ -52,8 +53,11 @@ public class PermissionAspect {
 
         // 先走 Redis 權限快取
         Set<String> userPerm = permissionCache.get(username);
+        boolean permissionCacheHit = userPerm != null && !userPerm.isEmpty();
+        AuditContext.put("permissionRedis", permissionCacheHit ? "HIT" : "MISS");
+        AuditContext.put("permissionMode", mode);
 
-        if (userPerm == null || userPerm.isEmpty()) {
+        if (!permissionCacheHit) {
             userPerm = auth.getAuthorities()
                     .stream()
                     .map(GrantedAuthority::getAuthority)

@@ -20,6 +20,14 @@ public interface OperationLogRepository extends JpaRepository<OperationLogEntity
             "SELECT l FROM OperationLogEntity l " +
                     "WHERE LOWER(l.username) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
                     "   OR LOWER(l.operation) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+                    "   OR LOWER(l.description) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+                    "   OR LOWER(l.args) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+                    "   OR LOWER(l.traceId) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+                    "   OR LOWER(l.className) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+                    "   OR LOWER(l.methodName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+                    "   OR LOWER(l.uri) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+                    "   OR LOWER(l.httpMethod) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+                    "   OR LOWER(l.ip) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
                     "ORDER BY l.createTime DESC"
     )
     Page<OperationLogEntity> searchLogs(
@@ -54,7 +62,15 @@ public interface OperationLogRepository extends JpaRepository<OperationLogEntity
     SELECT l FROM OperationLogEntity l
     WHERE (:keyword IS NULL
            OR LOWER(l.username) LIKE LOWER(CONCAT('%', :keyword, '%'))
-           OR LOWER(l.operation) LIKE LOWER(CONCAT('%', :keyword, '%')))
+           OR LOWER(l.operation) LIKE LOWER(CONCAT('%', :keyword, '%'))
+           OR LOWER(l.description) LIKE LOWER(CONCAT('%', :keyword, '%'))
+           OR LOWER(l.args) LIKE LOWER(CONCAT('%', :keyword, '%'))
+           OR LOWER(l.traceId) LIKE LOWER(CONCAT('%', :keyword, '%'))
+           OR LOWER(l.className) LIKE LOWER(CONCAT('%', :keyword, '%'))
+           OR LOWER(l.methodName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+           OR LOWER(l.uri) LIKE LOWER(CONCAT('%', :keyword, '%'))
+           OR LOWER(l.httpMethod) LIKE LOWER(CONCAT('%', :keyword, '%'))
+           OR LOWER(l.ip) LIKE LOWER(CONCAT('%', :keyword, '%')))
       AND (:start IS NULL OR l.createTime >= :start)
       AND (:end IS NULL OR l.createTime <= :end)
     ORDER BY l.createTime DESC

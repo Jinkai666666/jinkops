@@ -1,5 +1,6 @@
 package com.jinkops.service;
 
+import com.jinkops.audit.AuditContext;
 import com.jinkops.cache.service.PermissionCache;
 import com.jinkops.entity.user.User;
 import com.jinkops.exception.BizException;
@@ -51,6 +52,9 @@ public class AuthService {
 
             // 寫入 Redis 快取
             permissionCache.set(user.getUsername(), perms);
+            // 順手標記一下，這樣操作日誌能看出登入時有把權限放進 Redis。
+            AuditContext.put("permissionRedis", "SET");
+            AuditContext.put("permissionCount", perms.size());
 
             // 生成 token
             String token = jwtUtil.generateToken(user.getUsername());

@@ -117,6 +117,9 @@ public class OperationLogListener {
         doc.put("args", entity.getArgs());
         doc.put("description", entity.getDescription());
         doc.put("elapsedTime", entity.getElapsedTime());
+        doc.put("uri", entity.getUri());
+        doc.put("httpMethod", entity.getHttpMethod());
+        doc.put("ip", entity.getIp());
         if (entity.getCreateTime() != null) {
             long epochMillis = entity.getCreateTime()
                     .atZone(ZoneId.systemDefault())

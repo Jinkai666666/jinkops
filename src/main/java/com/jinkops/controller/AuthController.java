@@ -32,7 +32,7 @@ public class AuthController {
     }
 
     // 登入介面
-    @OperationLog
+    @OperationLog("用户登录")
     @PostMapping("/login")
     public ApiResponse<LoginResponse> login(@RequestBody User user) {
         log.info("[API] POST /api/auth/login");
@@ -40,6 +40,7 @@ public class AuthController {
     }
 
     // 驗證 Token
+    @OperationLog("校验 Token")
     @GetMapping("/verify")
     public ApiResponse<String> verify(@RequestParam String token) {
         log.info("[API] GET /api/auth/verify");

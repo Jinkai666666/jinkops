@@ -1,5 +1,6 @@
 package com.jinkops.controller;
 
+import com.jinkops.annotation.OperationLog;
 import com.jinkops.annotation.RequirePermission;
 import com.jinkops.entity.user.Permission;
 import com.jinkops.service.PermissionService;
@@ -25,6 +26,7 @@ public class PermissionController {
     private final PermissionService permissionService;
 
     // 權限列表
+    @OperationLog("查询权限列表")
     @RequirePermission("sys:perm:list")
     @GetMapping
     public ApiResponse<List<Permission>> list() {
@@ -33,6 +35,7 @@ public class PermissionController {
     }
 
     // 新增權限
+    @OperationLog("新增权限")
     @RequirePermission("sys:perm:create")
     @PostMapping
     public ApiResponse<Permission> create(@RequestBody PermissionCreateRequest request) {
@@ -41,6 +44,7 @@ public class PermissionController {
     }
 
     // 刪除權限
+    @OperationLog("删除权限")
     @RequirePermission("sys:perm:delete")
     @DeleteMapping("/{id}")
     public ApiResponse<String> delete(@PathVariable Long id) {

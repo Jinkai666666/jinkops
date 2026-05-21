@@ -1,5 +1,6 @@
 package com.jinkops.controller;
 
+import com.jinkops.annotation.OperationLog;
 import com.jinkops.annotation.RequirePermission;
 import com.jinkops.service.RbacService;
 import com.jinkops.vo.ApiResponse;
@@ -22,6 +23,7 @@ public class RbacController {
     private final RbacService rbacService;
 
     // 指派用戶角色
+    @OperationLog("分配用户角色")
     @RequirePermission("sys:rbac:assign")
     @PostMapping("/user-role/assign")
     public ApiResponse<String> assignUserRoles(@RequestBody UserRoleAssignRequest request) {
@@ -31,6 +33,7 @@ public class RbacController {
     }
 
     // 指派角色權限
+    @OperationLog("分配角色权限")
     @RequirePermission("sys:rbac:assign")
     @PostMapping("/role-permission/assign")
     public ApiResponse<String> assignRolePermissions(@RequestBody RolePermissionAssignRequest request) {

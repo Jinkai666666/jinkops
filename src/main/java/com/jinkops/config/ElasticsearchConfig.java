@@ -19,11 +19,25 @@ public class ElasticsearchConfig {
     @Value("${elasticsearch.port}")
     private int port;
 
+    @Value("${elasticsearch.scheme:http}")
+    private String scheme;
+
+    @Value("${elasticsearch.connect-timeout:3000}")
+    private int connectTimeout;
+
+    @Value("${elasticsearch.socket-timeout:5000}")
+    private int socketTimeout;
+
     @Bean
     public ElasticsearchClient elasticsearchClient() {
         RestClient restClient = RestClient.builder(
-                new HttpHost(host, port, "http")
-        ).build();
+                        new HttpHost(host, port, scheme)
+                )
+                .setRequestConfigCallback(config -> config
+                        .setConnectTimeout(connectTimeout)
+                        .setSocketTimeout(socketTimeout)
+                )
+                .build();
 
         ElasticsearchTransport transport = new RestClientTransport(
                 restClient,

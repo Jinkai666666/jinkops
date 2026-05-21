@@ -4,6 +4,9 @@
 elasticsearch:
   host: ${ELASTICSEARCH_HOST:localhost}
   port: ${ELASTICSEARCH_PORT:9200}
+  scheme: ${ELASTICSEARCH_SCHEME:http}
+  connect-timeout: ${ELASTICSEARCH_CONNECT_TIMEOUT:3000}
+  socket-timeout: ${ELASTICSEARCH_SOCKET_TIMEOUT:5000}
 
 management:
   health:

@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { getLogs, searchLogs, pageLogs, advancedSearchLogs } from '../api/logs';
+import { pageLogs, advancedSearchLogs } from '../api/logs';
 import type { OperationLog } from '../api/types';
 import { formatLocal, formatDisplay } from '../utils/time';
 
-type Mode = 'page' | 'list' | 'search' | 'advanced';
+type Mode = 'page' | 'advanced';
 
 const loading = ref(false);
 const mode = ref<Mode>('page');
 const logs = ref<OperationLog[]>([]);
-const rawAdvanced = ref<OperationLog[]>([]);
+const tableData = logs;
 const query = reactive({
   keyword: '',
   range: [] as (Date | string)[],
@@ -18,32 +18,6 @@ const query = reactive({
   size: 10,
   total: 0
 });
-
-const tableData = computed(() => {
-  if (mode.value === 'advanced' || mode.value === 'search') {
-    const start = (query.page - 1) * query.size;
-    return logs.value.slice(start, start + query.size);
-  }
-  return logs.value;
-});
-
-const normalize = (val: any) => (val === null || val === undefined ? '' : String(val));
-const matchKeyword = (row: OperationLog, keyword: string) => {
-  if (!keyword) return true;
-  const k = keyword.toLowerCase();
-  const fields = [
-    row.username,
-    row.operation,
-    row.description,
-    row.className,
-    row.methodName,
-    row.args,
-    row.traceId,
-    row.elapsedTime,
-    row.createTime
-  ];
-  return fields.some((f) => normalize(f).toLowerCase().includes(k));
-};
 
 const fetchLogs = async () => {
   loading.value = true;
@@ -56,39 +30,28 @@ const fetchLogs = async () => {
         body.endTime = formatLocal(query.range[1]);
       }
       const data = await pageLogs(body);
-      const filtered = query.keyword ? data.content.filter((r: any) => matchKeyword(r, query.keyword)) : data.content;
-      logs.value = filtered;
-      query.total = filtered.length;
+      logs.value = data.content;
+      query.total = data.totalElements;
       return;
     }
 
-    if (mode.value === 'list') {
-      const data = await getLogs(query.page - 1, query.size);
-      const filtered = query.keyword ? data.content.filter((r: any) => matchKeyword(r, query.keyword)) : data.content;
-      logs.value = filtered;
-      query.total = filtered.length;
-      return;
-    }
-
-    // search & advanced 统一用高级接口拿全量再前端模糊过滤
-    const params: Record<string, any> = {};
+    const params: Record<string, any> = {
+      page: query.page - 1,
+      size: query.size
+    };
+    if (query.keyword) params.keyword = query.keyword;
     if (query.range.length === 2) {
       params.startTime = new Date(query.range[0]).getTime();
       params.endTime = new Date(query.range[1]).getTime();
     }
     const data = await advancedSearchLogs(params);
-    rawAdvanced.value = data || [];
-    const filtered = query.keyword
-      ? rawAdvanced.value.filter((r) => matchKeyword(r, query.keyword))
-      : rawAdvanced.value;
-    logs.value = filtered;
-    query.total = filtered.length;
-    query.page = 1;
+    logs.value = data.content;
+    query.total = data.totalElements;
   } catch (e: any) {
     if (e?.status === 403) {
-      ElMessage.error('无权限');
+      ElMessage.error('無權限');
     } else {
-      ElMessage.error('加载日志失败');
+      ElMessage.error('載入日誌失敗');
     }
   } finally {
     loading.value = false;
@@ -110,23 +73,13 @@ const resetFilters = () => {
 
 const handlePageChange = (page: number) => {
   query.page = page;
-  if (mode.value === 'advanced' || mode.value === 'search') {
-    return; // 前端分页
-  }
-  if (mode.value !== 'advanced') {
-    fetchLogs();
-  }
+  fetchLogs();
 };
 
 const handleSizeChange = (size: number) => {
   query.size = size;
   query.page = 1;
-  if (mode.value === 'advanced' || mode.value === 'search') {
-    return; // 前端分页
-  }
-  if (mode.value !== 'advanced') {
-    fetchLogs();
-  }
+  fetchLogs();
 };
 
 onMounted(fetchLogs);
@@ -136,25 +89,18 @@ onMounted(fetchLogs);
   <div class="logs-view page">
     <div class="glass-card hero">
       <div>
-        <p class="eyebrow">日志 / 搜索 / 降级</p>
-        <h2>操作日志：分页、关键词、时间区间</h2>
+        <p class="eyebrow">日誌 / 搜尋 / 降級</p>
+        <h2>操作日誌：分頁、關鍵詞、時間區間</h2>
         <p class="muted">
-          所有日志接口一屏覆盖：POST /api/logs/page（统一入口），GET /api/logs（基础分页），GET
-          /api/logs/search（ES 搜索），GET /api/logs/search/advanced（带时间戳，含降级）。
+          所有日誌接口集成：POST /api/logs/page（統一分頁），GET /api/logs/search/advanced（進階搜尋，優先 ES，失敗降級至 DB）。
         </p>
       </div>
       <div class="mode-buttons">
         <el-button :type="mode === 'page' ? 'primary' : 'default'" @click="switchMode('page')">
-          统一分页 · POST /api/logs/page
-        </el-button>
-        <el-button :type="mode === 'list' ? 'primary' : 'default'" @click="switchMode('list')">
-          基础列表 · GET /api/logs
-        </el-button>
-        <el-button :type="mode === 'search' ? 'primary' : 'default'" @click="switchMode('search')">
-          关键词搜索 · GET /api/logs/search
+          統一分頁 · POST /api/logs/page
         </el-button>
         <el-button :type="mode === 'advanced' ? 'primary' : 'default'" @click="switchMode('advanced')">
-          高级搜索 · GET /api/logs/search/advanced
+          高級搜尋 · GET /api/logs/search/advanced
         </el-button>
       </div>
     </div>
@@ -163,34 +109,34 @@ onMounted(fetchLogs);
       <div class="header">
         <div>
           <p class="eyebrow">OPERATION LOGS</p>
-          <h3>日志列表（{{ mode }}）</h3>
+          <h3>日誌列表（{{ mode }}）</h3>
         </div>
         <div class="filters">
           <el-input
             v-model="query.keyword"
-            placeholder="关键词（用户 / 操作 / 描述 / 定位 / 参数）"
+            placeholder="關鍵詞（用戶 / 操作 / 描述 / 定位 / 參數）"
             clearable
             style="width: 260px"
           />
           <el-date-picker
             v-model="query.range"
             type="datetimerange"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
+            start-placeholder="開始時間"
+            end-placeholder="結束時間"
             style="width: 360px"
           />
-          <el-button type="primary" :loading="loading" @click="fetchLogs">查询</el-button>
+          <el-button type="primary" :loading="loading" @click="fetchLogs">查詢</el-button>
           <el-button text @click="resetFilters">重置</el-button>
         </div>
       </div>
 
       <el-table :data="tableData" stripe v-loading="loading" height="540">
         <el-table-column prop="id" label="ID" width="70" />
-        <el-table-column prop="username" label="用户" width="140" />
+        <el-table-column prop="username" label="用戶" width="140" />
         <el-table-column prop="operation" label="操作" width="180" />
         <el-table-column prop="description" label="描述" width="200" />
-        <el-table-column prop="elapsedTime" label="耗时(ms)" width="110" />
-        <el-table-column label="参数" min-width="260">
+        <el-table-column prop="elapsedTime" label="耗時(ms)" width="110" />
+        <el-table-column label="參數" min-width="260">
           <template #default="{ row }">
             <el-tooltip v-if="row.args" placement="top-start" effect="dark" :content="row.args">
               <span class="args">{{ row.args }}</span>
@@ -204,7 +150,7 @@ onMounted(fetchLogs);
             <div class="muted">traceId: {{ row.traceId || '-' }}</div>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="时间" width="180">
+        <el-table-column prop="createTime" label="時間" width="180">
           <template #default="{ row }">
             {{ formatDisplay(row.createTime) }}
           </template>
@@ -224,7 +170,7 @@ onMounted(fetchLogs);
       </div>
       <div class="note">
         <p class="muted">
-          当前模式: {{ mode }} · 已覆盖接口 /api/logs、/api/logs/search、/api/logs/page、/api/logs/search/advanced
+          當前模式: {{ mode }} · 已覆蓋接口 /api/logs/page、/api/logs/search/advanced
         </p>
       </div>
     </div>

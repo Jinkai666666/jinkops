@@ -1,5 +1,6 @@
 package com.jinkops.controller;
 
+import com.jinkops.annotation.OperationLog;
 import com.jinkops.annotation.RequirePermission;
 import com.jinkops.entity.user.Role;
 import com.jinkops.service.RoleService;
@@ -26,6 +27,7 @@ public class RoleController {
     private final RoleService roleService;
 
     // 角色列表
+    @OperationLog("查询角色列表")
     @RequirePermission("sys:role:list")
     @GetMapping
     public ApiResponse<List<Role>> list() {
@@ -34,6 +36,7 @@ public class RoleController {
     }
 
     // 新增角色
+    @OperationLog("新增角色")
     @RequirePermission("sys:role:create")
     @PostMapping
     public ApiResponse<Role> create(@RequestBody RoleCreateRequest request) {
@@ -42,6 +45,7 @@ public class RoleController {
     }
 
     // 更新角色
+    @OperationLog("更新角色")
     @RequirePermission("sys:role:update")
     @PutMapping("/{id}")
     public ApiResponse<Role> update(@PathVariable Long id, @RequestBody RoleUpdateRequest request) {
@@ -50,6 +54,7 @@ public class RoleController {
     }
 
     // 刪除角色
+    @OperationLog("删除角色")
     @RequirePermission("sys:role:delete")
     @DeleteMapping("/{id}")
     public ApiResponse<String> delete(@PathVariable Long id) {

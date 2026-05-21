@@ -31,6 +31,7 @@ public class UserController {
     }
 
     // 查詢全部用戶
+    @OperationLog("查询用户列表")
     @RequirePermission("sys:user:list")
     @GetMapping
     public ApiResponse<List<User>> getAllUsers() {
@@ -39,6 +40,7 @@ public class UserController {
     }
 
     // 根據用戶名查詢（自動帶快取）
+    @OperationLog("查询用户详情")
     @RequirePermission("sys:user:list")
     @GetMapping("/{username}")
     public ApiResponse<User> getUserByUsername(@PathVariable String username) {
@@ -84,6 +86,7 @@ public class UserController {
     }
 
     // 分頁用戶查詢（帶快取）
+    @OperationLog("分页查询用户")
     @RequirePermission("sys:user:list")
     @GetMapping("/page")
     public ApiResponse<Page<User>> page(

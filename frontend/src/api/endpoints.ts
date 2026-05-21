@@ -1,5 +1,5 @@
 // axios baseURL 指向 /api，這裡保持相對路徑，避免再次拼 /api
-const API_BASE = '';
+const API_BASE = '/api/';
 
 export const API_ENDPOINTS = {
   auth: {
@@ -23,8 +23,6 @@ export const API_ENDPOINTS = {
     assignRolePermissions: `${API_BASE}rbac/role-permission/assign`
   },
   logs: {
-    base: `${API_BASE}logs`,
-    search: `${API_BASE}logs/search`,
     page: `${API_BASE}logs/page`,
     advanced: `${API_BASE}logs/search/advanced`
   }
