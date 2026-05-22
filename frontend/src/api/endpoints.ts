@@ -1,5 +1,5 @@
-// axios baseURL 指向 /api，這裡保持相對路徑，避免再次拼 /api
-const API_BASE = '/api/';
+// /api 統一放在 axios baseURL，這裡只保留後端資源路徑。
+const API_BASE = '';
 
 export const API_ENDPOINTS = {
   auth: {

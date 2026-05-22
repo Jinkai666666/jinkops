@@ -50,6 +50,7 @@ export interface OperationLog {
   description: string;
   elapsedTime: number;
   createTime: string;
+  querySource?: string;
 }
 
 export interface LogQueryRequest {

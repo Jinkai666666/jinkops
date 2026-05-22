@@ -13,6 +13,7 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -22,6 +23,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.concurrent.Executor;
 
 /**
  * 操作日誌切面。
@@ -38,6 +40,8 @@ public class OperationLogAspect {
 
     private final OperationLogRepository repository;
     private final EventLogService eventLogService;
+    @Qualifier("mqTaskExecutor")
+    private final Executor mqTaskExecutor;
 
     // 攔截所有有 @OperationLog 的方法，成功或失敗都會盡量落一筆操作日誌。
     @Around("@annotation(com.jinkops.annotation.OperationLog)")
@@ -125,7 +129,11 @@ public class OperationLogAspect {
         entity.setHttpMethod(httpMethod);
         entity.setIp(ip);
         repository.save(entity);
-        eventLogService.sendOperationLog(entity);
+        try {
+            mqTaskExecutor.execute(() -> eventLogService.sendOperationLog(entity));
+        } catch (Exception e) {
+            log.warn("[AUDIT] operation log saved, but MQ publish task submit failed: {}", e.getMessage());
+        }
     }
 
     private String appendAuditSummary(String desc, String auditSummary) {

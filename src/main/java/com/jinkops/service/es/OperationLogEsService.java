@@ -21,9 +21,11 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 操作日誌 ES 搜尋服務
@@ -136,6 +138,36 @@ public class OperationLogEsService {
         }
     }
 
+    public Set<Long> findExistingIds(List<Long> ids) throws Exception {
+        if (ids == null || ids.isEmpty()) {
+            return Set.of();
+        }
+
+        List<String> values = ids.stream()
+                .filter(id -> id != null)
+                .map(String::valueOf)
+                .toList();
+        if (values.isEmpty()) {
+            return Set.of();
+        }
+
+        SearchResponse<Map> response = elasticsearchClient.search(s -> s
+                        .index(INDEX_NAME)
+                        .query(q -> q.ids(i -> i.values(values)))
+                        .size(values.size()),
+                Map.class
+        );
+
+        Set<Long> existingIds = new HashSet<>();
+        for (Hit<Map> hit : response.hits().hits()) {
+            Long id = parseId(hit.id(), hit.source() == null ? null : hit.source().get("id"));
+            if (id != null) {
+                existingIds.add(id);
+            }
+        }
+        return existingIds;
+    }
+
     private List<OperationLogEntity> parseResponse(List<Hit<Map>> hits) {
         List<OperationLogEntity> result = new ArrayList<>();
         for (Hit<Map> hit : hits) {
@@ -144,6 +176,7 @@ public class OperationLogEsService {
                 continue;
             }
             OperationLogEntity entity = new OperationLogEntity();
+            entity.setId(parseId(hit.id(), source.get("id")));
             entity.setUsername((String) source.get("username"));
             entity.setOperation((String) source.get("operation"));
             entity.setTraceId((String) source.get("traceId"));
@@ -164,6 +197,7 @@ public class OperationLogEsService {
 
     private Map<String, Object> entityToDoc(OperationLogEntity entity) {
         Map<String, Object> doc = new HashMap<>();
+        doc.put("id", entity.getId());
         doc.put("username", entity.getUsername());
         doc.put("operation", entity.getOperation());
         doc.put("traceId", entity.getTraceId());
@@ -183,6 +217,21 @@ public class OperationLogEsService {
         doc.put("httpMethod", entity.getHttpMethod());
         doc.put("ip", entity.getIp());
         return doc;
+    }
+
+    private Long parseId(String hitId, Object sourceId) {
+        Object value = sourceId != null ? sourceId : hitId;
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        if (value instanceof String text && !text.isBlank()) {
+            try {
+                return Long.parseLong(text);
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
     }
 
     private String formatTime(Long epochMilli) {

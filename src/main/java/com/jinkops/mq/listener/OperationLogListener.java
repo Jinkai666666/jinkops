@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
+import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
 import org.springframework.stereotype.Component;
 
 import java.time.ZoneId;
@@ -21,13 +23,15 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class OperationLogListener {
 
-    private static final int MAX_RETRY = 3;
+    public static final String LISTENER_ID = "operationLogListener";
     private static final String INDEX_NAME = "operation_log_search";
 
     private final ElasticsearchClient elasticsearchClient;
+    private final RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry;
 
     @PostConstruct
     public void ensureIndex() {
+        log.info("[MQ] operation log listener ready queue={}", RabbitConfig.EVENT_LOG_QUEUE);
         try {
             boolean exists = elasticsearchClient.indices()
                     .exists(e -> e.index(INDEX_NAME))
@@ -57,8 +61,10 @@ public class OperationLogListener {
     }
 
     @RabbitListener(
+            id = LISTENER_ID,
             queues = RabbitConfig.EVENT_LOG_QUEUE,
-            ackMode = "MANUAL"
+            ackMode = "MANUAL",
+            autoStartup = "true"
     )
     public void onMessage(
             OperationLogEntity entity,
@@ -68,33 +74,22 @@ public class OperationLogListener {
 
         long tag = message.getMessageProperties().getDeliveryTag();
 
-        Integer retryCount = (Integer) message
-                .getMessageProperties()
-                .getHeaders()
-                .getOrDefault("x-retry-count", 0);
-
         try {
             // 先寫 ES，再決定 ACK / 重試
             indexToEs(entity);
 
             channel.basicAck(tag, false);
-            log.info("[MQ] consume success retry={} dlq=false source=ES", retryCount);
+            log.info("[MQ] consume success dlq=false source=ES");
 
         } catch (Exception e) {
-
-            if (retryCount >= MAX_RETRY) {
-                log.error("[MQ] consume failed retry={} dlq=true reason={}", retryCount, e.getMessage(), e);
-                channel.basicNack(tag, false, false);
-
-            } else {
-                int nextRetry = retryCount + 1;
-
-                message.getMessageProperties()
-                        .getHeaders()
-                        .put("x-retry-count", nextRetry);
-
-                log.error("[MQ] consume failed retry={} dlq=false reason={}", nextRetry, e.getMessage(), e);
-                channel.basicNack(tag, false, true);
+            // ES 掛掉就先放回主隊列，然後暫停消費者，等 Quartz 偵測恢復後再繼續。
+            log.error("[MQ] consume failed requeue=true pauseConsumer=true reason={}", e.getMessage(), e);
+            channel.basicNack(tag, false, true);
+            MessageListenerContainer container =
+                    rabbitListenerEndpointRegistry.getListenerContainer(LISTENER_ID);
+            if (container != null && container.isRunning()) {
+                container.stop();
+                log.warn("[MQ] paused operation log consumer because ES write failed");
             }
         }
     }
@@ -109,6 +104,7 @@ public class OperationLogListener {
                 : entity.getTraceId();
 
         Map<String, Object> doc = new HashMap<>();
+        doc.put("id", entity.getId());
         doc.put("username", entity.getUsername());
         doc.put("operation", entity.getOperation());
         doc.put("traceId", entity.getTraceId());

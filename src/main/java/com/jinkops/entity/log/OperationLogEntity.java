@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -73,4 +74,8 @@ public class OperationLogEntity {
     // IP
     @Column(length = 64)
     private String ip;
+
+    // 查詢這次結果是從哪裡來的，只給前端顯示，不存進資料表。
+    @Transient
+    private String querySource;
 }
